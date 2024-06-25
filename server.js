@@ -13,10 +13,12 @@ app.use(cors());
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const groupRoutes = require('./routes/groupRoutes');
 
 // Use routes
 app.use('/auth', authRoutes);
 app.use('/services', serviceRoutes);
+app.use('/groups', groupRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
