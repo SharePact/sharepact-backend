@@ -1,4 +1,4 @@
-const { firestore } = require('../firebase/admin');
+const { firestore, admin } = require('../firebase/admin');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -9,6 +9,7 @@ const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
 exports.createGroup = async (req, res) => {
   try {
     const { subscriptionService, groupName, subscriptionPlan, numberOfMembers, groupPrivacy } = req.body;
+    const { uid } = req.user; // Assuming you have 'uid' from authenticated user
 
     // Fetch service details for subscription cost and handling fees
     const serviceRef = firestore.collection('services').doc(subscriptionService);
@@ -36,6 +37,10 @@ exports.createGroup = async (req, res) => {
     const handlingFee = parseFloat(handlingFees);
     const totalCost = individualShare + handlingFee;
 
+    // Fetch admin's username from Firebase Authentication
+    const userRecord = await admin.auth().getUser(uid);
+    const adminUsername = userRecord.displayName || userRecord.email || 'Unknown';
+
     const groupData = {
       subscriptionService,
       serviceName,
@@ -47,6 +52,10 @@ exports.createGroup = async (req, res) => {
       individualShare,
       totalCost, 
       groupPrivacy: groupPrivacy === 'private', // Convert to boolean
+      admin: {
+        uid,
+        username: adminUsername
+      },
       createdAt: new Date().toISOString(),
     };
 
@@ -60,27 +69,60 @@ exports.createGroup = async (req, res) => {
 
 // Fetch all groups
 exports.getAllGroups = async (req, res) => {
-  try {
-    const groupsSnapshot = await firestore.collection('groups').get();
-    const groups = groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.status(200).json(groups);
-  } catch (error) {
-    console.error('Error fetching groups:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Fetch a specific group by ID
-exports.getGroupById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const doc = await firestore.collection('groups').doc(id).get();
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'Group not found' });
+    try {
+      const groupsRef = firestore.collection('groups');
+      const querySnapshot = await groupsRef.get();
+  
+      if (querySnapshot.empty) {
+        return res.status(404).json({ error: 'No groups found' });
+      }
+  
+      const groups = [];
+      querySnapshot.forEach((doc) => {
+        groups.push({ id: doc.id, ...doc.data() });
+      });
+  
+      res.status(200).json({
+        message: 'All groups fetched successfully',
+        groups: groups
+      });
+    } catch (error) {
+      console.error('Error fetching all groups:', error);
+      res.status(500).json({ error: error.message });
     }
-    res.status(200).json({ id: doc.id, ...doc.data() });
+  };
+// Fetch groups by subscription service
+exports.getGroupsByService = async (req, res) => {
+  const { serviceId } = req.params;
+
+  try {
+    const groupsRef = firestore.collection('groups');
+    const querySnapshot = await groupsRef.where('subscriptionService', '==', serviceId).get();
+
+    if (querySnapshot.empty) {
+      return res.status(404).json({ error: 'No groups found for this service' });
+    }
+
+    // Fetch service name from Firestore based on serviceId
+    const serviceDoc = await firestore.collection('services').doc(serviceId).get();
+    if (!serviceDoc.exists) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    const { serviceName } = serviceDoc.data();
+
+    const groups = [];
+    querySnapshot.forEach((doc) => {
+      groups.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.status(200).json({
+      message: `All groups for ${serviceName} fetched successfully`,
+      groups: groups,
+      serviceName: serviceName
+    });
   } catch (error) {
-    console.error('Error fetching group:', error);
+    console.error('Error fetching groups by service:', error);
     res.status(500).json({ error: error.message });
   }
 };
