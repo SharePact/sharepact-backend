@@ -1,6 +1,6 @@
 const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator');
-const firebase = require('../firebase/client');
-const firestore = firebase.firestore(); // Assuming you are using Firestore
+const { admin, firestore } = require('../firebase/admin');
+const { auth: firebaseAuth } = require('../firebase/client');
 
 // Function to generate a random unique username
 function generateRandomUsername() {
@@ -12,99 +12,56 @@ function generateRandomUsername() {
 }
 
 // Sign-up with email and password
-exports.signupWithEmail = (req, res) => {
+exports.signupWithEmail = async (req, res) => {
   const { email, password } = req.body;
-  const randomUsername = generateRandomUsername(); // Generate random username
+  const randomUsername = generateRandomUsername();
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      // Update user profile with random username
-      return userCredential.user.updateProfile({
-        displayName: randomUsername
-      }).then(() => {
-        // Store additional user data including username in Firestore
-        const userData = {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          username: randomUsername // Store username here
-        };
-
-        // Store user data in Firestore
-        return firestore.collection('users').doc(userCredential.user.uid).set(userData)
-          .then(() => {
-            res.status(201).json({ message: 'User signed up successfully', user: userData });
-          })
-          .catch(error => {
-            res.status(500).json({ error: 'Error storing user data in Firestore', details: error });
-          });
-      });
-    })
-    .catch(error => {
-      res.status(400).json({ error: error.message });
+  try {
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+      displayName: randomUsername,
     });
+
+    await admin.auth().setCustomUserClaims(userRecord.uid, { role: 'user' });
+
+    const userData = {
+      uid: userRecord.uid,
+      email: userRecord.email,
+      username: randomUsername,
+      role: 'user'
+    };
+
+    await firestore.collection('users').doc(userRecord.uid).set(userData);
+
+    res.status(201).json({ message: 'User signed up successfully', user: userData });
+  } catch (error) {
+    console.error('Error signing up:', error);
+    res.status(400).json({ error: error.message });
+  }
 };
 
-  
-  // Sign-in with email and password
-exports.signinWithEmail = (req, res) => {
+// Sign-in with email and password and issue Firebase ID token
+exports.signinWithEmail = async (req, res) => {
   const { email, password } = req.body;
-  
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      const user = {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        emailVerified: userCredential.user.emailVerified,
-        username: userCredential.user.displayName,
-       // photoURL: userCredential.user.photoURL
-        // Add other necessary fields as needed
-      };
-      res.status(200).json({ message: 'User signed in successfully', user });
-    })
-    .catch(error => {
-      res.status(400).json({ error: error.message });
-    });
-};
 
-// Sign-in with Google
-// exports.signinWithGoogle = (req, res) => {
-//     const { idToken } = req.body;
-//     const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
-  
-//     firebase.auth().signInWithCredential(credential)
-//       .then(userCredential => {
-//         const user = {
-//           uid: userCredential.user.uid,
-//           email: userCredential.user.email,
-//           emailVerified: userCredential.user.emailVerified,
-//           displayName: userCredential.user.displayName,
-//           photoURL: userCredential.user.photoURL
-//           // Add other necessary fields as needed
-//         };
-//         res.status(200).json({ message: 'User signed in with Google successfully', user });
-//       })
-//       .catch(error => {
-//         res.status(400).json({ error: error.message });
-//       });
-//   };
-  
-  // Sign-in with Apple
-  // exports.signinWithApple = (req, res) => {
-  //   const { idToken } = req.body;
-  //   const credential = firebase.auth.OAuthProvider('apple.com').credential(idToken);
-  
-  //   firebase.auth().signInWithCredential(credential)
-  //     .then(userCredential => {
-  //       const user = {
-  //         uid: userCredential.user.uid,
-  //         email: userCredential.user.email,
-  //         emailVerified: userCredential.user.emailVerified
-  //         // Add other necessary fields as needed
-  //       };
-  //       res.status(200).json({ message: 'User signed in with Apple successfully', user });
-  //     })
-  //     .catch(error => {
-  //       res.status(400).json({ error: error.message });
-  //     });
-  // };
-  
+  try {
+
+    const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
+    const idToken = await userCredential.user.getIdToken(true); // Force refresh to get the latest token
+
+    // Decode the token to check its contents
+    const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+
+    res.status(200).json({ message: 'User signed in successfully', token: idToken });
+  } catch (error) {
+    console.error('Error signing in:', error);
+    if (error.code === 'auth/user-not-found') {
+      res.status(400).json({ error: 'No user found with this email.' });
+    } else if (error.code === 'auth/wrong-password') {
+      res.status(400).json({ error: 'Incorrect password.' });
+    } else {
+      res.status(400).json({ error: error.message });
+    }
+  }
+};
