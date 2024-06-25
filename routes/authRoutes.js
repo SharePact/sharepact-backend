@@ -9,9 +9,9 @@ router.post('/signup', authController.signupWithEmail);
 router.post('/signin', authController.signinWithEmail);
 
 // Sign-in with Google
-router.post('/google', authController.signinWithGoogle);
+//router.post('/google', authController.signinWithGoogle);
 
 // Sign-in with Apple
-router.post('/apple', authController.signinWithApple);
+//router.post('/apple', authController.signinWithApple);
 
 module.exports = router;
