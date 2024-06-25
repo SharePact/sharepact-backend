@@ -41,6 +41,7 @@ exports.createGroup = async (req, res) => {
     const userRecord = await admin.auth().getUser(uid);
     const adminUsername = userRecord.displayName || userRecord.email || 'Unknown';
 
+    // Create a new group document
     const groupData = {
       subscriptionService,
       serviceName,
@@ -59,13 +60,24 @@ exports.createGroup = async (req, res) => {
       createdAt: new Date().toISOString(),
     };
 
-    const docRef = await firestore.collection('groups').add(groupData);
-    res.status(201).json({ message: 'Group created successfully', id: docRef.id, ...groupData });
+    const groupRef = await firestore.collection('groups').add(groupData);
+    const groupId = groupRef.id;
+
+    // Create a group chat for the newly created group
+    const chatData = {
+      groupId,
+      messages: [] // Start with an empty array of messages
+    };
+
+    await firestore.collection('chats').doc(groupId).set(chatData);
+
+    res.status(201).json({ message: 'Group created successfully', id: groupId, ...groupData });
   } catch (error) {
     console.error('Error creating group:', error);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // Fetch all groups
 exports.getAllGroups = async (req, res) => {
@@ -123,6 +135,110 @@ exports.getGroupsByService = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching groups by service:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Join a public or private group
+exports.joinGroup = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { uid } = req.user; // Assuming you have 'uid' from authenticated user
+
+    // Fetch group details
+    const groupRef = firestore.collection('groups').doc(groupId);
+    const groupDoc = await groupRef.get();
+
+    if (!groupDoc.exists) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const groupData = groupDoc.data();
+    
+    // Check group privacy
+    if (groupData.groupPrivacy === false) {
+      // Public group: Directly add user to group chat (update logic as per your implementation)
+      // For example, add user to group chat document
+      const chatRef = firestore.collection('chats').doc(groupId);
+      // Example logic: chatRef.collection('members').doc(uid).set({}); 
+
+      return res.status(200).json({ message: 'Joined public group successfully' });
+    } else if (groupData.groupPrivacy === true) {
+      // Private group: User requests to join
+      const joinRequestRef = groupRef.collection('joinRequests').doc(uid);
+
+      // Check if request already exists
+      const joinRequestDoc = await joinRequestRef.get();
+      if (joinRequestDoc.exists) {
+        return res.status(400).json({ error: 'Already requested to join this group' });
+      }
+
+      // Create join request
+      await joinRequestRef.set({
+        userId: uid,
+        createdAt: new Date().toISOString(),
+        status: 'pending' // pending/accepted/rejected
+      });
+
+      return res.status(200).json({ message: 'Join request sent to admin' });
+    } else {
+      return res.status(400).json({ error: 'Invalid group privacy setting' });
+    }
+  } catch (error) {
+    console.error('Error joining group:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Admin accepts/rejects join requests for private groups
+exports.processJoinRequest = async (req, res) => {
+  try {
+    const { groupId, userId } = req.params;
+    const { action } = req.body; // 'accept' or 'reject'
+
+    // Fetch group details
+    const groupRef = firestore.collection('groups').doc(groupId);
+    const groupDoc = await groupRef.get();
+
+    if (!groupDoc.exists) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const groupData = groupDoc.data();
+
+    // Verify admin permission (assuming req.user.uid is admin's uid)
+    if (req.user.uid !== groupData.admin.uid) {
+      return res.status(403).json({ error: 'Unauthorized: Only admin can process join requests' });
+    }
+
+    // Check if join request exists
+    const joinRequestRef = groupRef.collection('joinRequests').doc(userId);
+    const joinRequestDoc = await joinRequestRef.get();
+
+    if (!joinRequestDoc.exists) {
+      return res.status(404).json({ error: 'Join request not found' });
+    }
+
+    // Process request
+    if (action === 'accept') {
+      // Add user to group chat (update logic as per your implementation)
+      // Example: const chatRef = firestore.collection('chats').doc(groupId);
+      // Example: chatRef.collection('members').doc(userId).set({});
+
+      // Update join request status
+      await joinRequestRef.update({ status: 'accepted' });
+
+      return res.status(200).json({ message: 'User added to group chat' });
+    } else if (action === 'reject') {
+      // Update join request status
+      await joinRequestRef.update({ status: 'rejected' });
+
+      return res.status(200).json({ message: 'Join request rejected' });
+    } else {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+  } catch (error) {
+    console.error('Error processing join request:', error);
     res.status(500).json({ error: error.message });
   }
 };
