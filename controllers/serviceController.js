@@ -20,7 +20,6 @@ const createService = async (req, res) => {
       subscriptionPlans,
       currency,
       handlingFees,
-      importantInformation,
       categoryId,
     } = req.body;
 
@@ -48,7 +47,6 @@ const createService = async (req, res) => {
       subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
       currency,
       handlingFees,
-      importantInformation,
       logoUrl,
       categoryId,
       createdAt: new Date().toISOString(),
@@ -68,8 +66,6 @@ const createService = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 // Get all services
 const getServices = async (req, res) => {
@@ -121,7 +117,6 @@ const updateService = async (req, res) => {
       subscriptionPlans,
       currency,
       handlingFees,
-      importantInformation,
       categoryId,
     } = req.body;
 
@@ -135,7 +130,6 @@ const updateService = async (req, res) => {
       subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
       currency,
       handlingFees,
-      importantInformation,
       categoryId,
       updatedAt: new Date().toISOString(),
     };
