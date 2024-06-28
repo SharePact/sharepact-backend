@@ -14,11 +14,14 @@ app.use(cors());
 const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const groupRoutes = require('./routes/groupRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 // Use routes
 app.use('/auth', authRoutes);
 app.use('/services', serviceRoutes);
 app.use('/groups', groupRoutes);
+app.use('/categories', categoryRoutes);
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;

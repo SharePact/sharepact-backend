@@ -21,11 +21,18 @@ const createService = async (req, res) => {
       currency,
       handlingFees,
       importantInformation,
+      categoryId,
     } = req.body;
 
-    if (!serviceName || !serviceDescription || !subscriptionPlans || !currency) {
+    if (!serviceName || !serviceDescription || !subscriptionPlans || !currency || !categoryId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    const categoryDoc = await firestore.collection('categories').doc(categoryId).get();
+    if (!categoryDoc.exists) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    const categoryName = categoryDoc.data().categoryName;
 
     const logoFile = req.file;
     let logoUrl = '';
@@ -43,17 +50,26 @@ const createService = async (req, res) => {
       handlingFees,
       importantInformation,
       logoUrl,
+      categoryId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     const docRef = await firestore.collection('services').add(serviceData);
-    res.status(201).json({ message: 'Service created successfully', id: docRef.id, ...serviceData });
+
+    res.status(201).json({
+      message: 'Service created successfully',
+      id: docRef.id,
+      categoryName, // Include category name in the response
+      ...serviceData
+    });
   } catch (error) {
     console.error('Error creating service:', error);
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 // Get all services
 const getServices = async (req, res) => {
@@ -75,7 +91,20 @@ const getServiceById = async (req, res) => {
     if (!doc.exists) {
       return res.status(404).json({ error: 'Service not found' });
     }
-    res.status(200).json({ message: 'Service fetched successfully', id: doc.id, ...doc.data() });
+    const serviceData = doc.data();
+
+    const categoryDoc = await firestore.collection('categories').doc(serviceData.categoryId).get();
+    if (!categoryDoc.exists) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    const categoryName = categoryDoc.data().categoryName;
+
+    res.status(200).json({
+      message: 'Service fetched successfully',
+      id: doc.id,
+      categoryName, // Include category name in the response
+      ...serviceData
+    });
   } catch (error) {
     console.error('Error fetching service:', error);
     res.status(500).json({ error: error.message });
@@ -93,9 +122,10 @@ const updateService = async (req, res) => {
       currency,
       handlingFees,
       importantInformation,
+      categoryId,
     } = req.body;
 
-    if (!serviceName || !serviceDescription || !subscriptionPlans || !currency) {
+    if (!serviceName || !serviceDescription || !subscriptionPlans || !currency || categoryId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -106,6 +136,7 @@ const updateService = async (req, res) => {
       currency,
       handlingFees,
       importantInformation,
+      categoryId,
       updatedAt: new Date().toISOString(),
     };
 
