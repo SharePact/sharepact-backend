@@ -1,5 +1,6 @@
+const { request } = require('express');
 const { firestore, admin } = require('../firebase/admin');
-const { UserModel, GroupModel, GroupJoinRequestModel } = require('../models');
+const { UserModel, GroupModel, GroupJoinRequestModel, GroupMembershipModel } = require('../models');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -154,30 +155,23 @@ exports.joinGroupByCode = async (req, res) => {
 // Admin accepts/rejects join requests for groups
 exports.processJoinRequest = async (req, res) => {
   try {
-    const { groupId, userId } = req.params;
+    const { requestId } = req.params;
     const { action } = req.body; // 'accept' or 'reject'
 
-    // Fetch group details
-    const groupRef = firestore.collection('groups').doc(groupId);
-    const groupDoc = await groupRef.get();
+    let groupRequest = await GroupJoinRequestModel.findOne({ requestId, status: "pending" })
 
-    if (!groupDoc.exists) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
+    if(!groupRequest) return res.status(404).json({ message: 'No join request was found' });
 
-    const groupData = groupDoc.data();
+    let group = await GroupModel.findOne({ _id: groupRequest.group })
+
+    if(!group) return res.status(404).json({ message: 'No group was found' });
+
+    let user = await UserModel.findOne({ uid: request.user.uid });
+    let groupAdmin = await UserModel.findOne({ _id: group.admin });
 
     // Verify admin permission (assuming req.user.uid is admin's uid)
-    if (req.user.uid !== groupData.admin.uid) {
+    if (req.user.uid !== groupAdmin.uid) {
       return res.status(403).json({ error: 'Unauthorized: Only admin can process join requests' });
-    }
-
-    // Check if join request exists
-    const joinRequestRef = groupRef.collection('joinRequests').doc(userId);
-    const joinRequestDoc = await joinRequestRef.get();
-
-    if (!joinRequestDoc.exists) {
-      return res.status(404).json({ error: 'Join request not found' });
     }
 
     // Process request
@@ -187,13 +181,19 @@ exports.processJoinRequest = async (req, res) => {
       // Example: chatRef.collection('members').doc(userId).set({});
 
       // Update join request status
-      await joinRequestRef.update({ status: 'accepted' });
+      group.members.push(user._id);
+      await group.save()
+
+      await GroupMembershipModel.create({ user: user._id, group: group._id })
+
+      groupRequest.status = "accepted"
+      await groupRequest.save()
 
       return res.status(200).json({ message: 'User added to group chat' });
     } else if (action === 'reject') {
       // Update join request status
-      await joinRequestRef.update({ status: 'rejected' });
-
+      groupRequest.status = "rejected"
+      await groupRequest.save()
       return res.status(200).json({ message: 'Join request rejected' });
     } else {
       return res.status(400).json({ error: 'Invalid action' });

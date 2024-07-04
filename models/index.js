@@ -25,6 +25,7 @@ exports.GroupModelSchema = new Schema({
     username: { type: String, required: false },
     password: { type: String, required: false },
     admin: { type: Types.ObjectId, required: true, ref: "User" },
+    members: { type: [Types.ObjectId], ref: "User", default: [] },
     createdAt: { type: Date, default: Date.now }
 })
 
@@ -37,4 +38,12 @@ exports.JoinRequestModelSchema = new Schema({
     status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" }
 })
 
-exports.GroupJoinRequestModel = model('GroupJoinRequest', this.JoinRequestModelSchema)
+exports.GroupJoinRequestModel = model('GroupJoinRequest', this.JoinRequestModelSchema);
+
+exports.GroupMembershipModelSchema = new Schema({
+    group: { type: Types.ObjectId, required: true, ref: "Group" },
+    user: { type: Types.ObjectId, required: true, ref: "User" },
+    createdAt: { type: Date, default: Date.now }
+})
+
+exports.GroupMembershipModel = model('GroupMembership', this.GroupMembershipModel)

@@ -24,3 +24,7 @@ exports.createServiceSchema = z.object({
     handlingFees: number({ required_error: "handling fees is required" }),
     categoryId: string({ required_error: "category id is required" }),
 }).strict();
+
+exports.processJoinRequest = z.object({
+    action: z.enum(["accept", "reject"], { required_error: "accept or reject this request" })
+})
