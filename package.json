@@ -4,22 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
     "express-jwt": "^7.7.8",
     "express-validator": "^7.1.0",
     "firebase": "^9.23.0",
     "firebase-admin": "^12.2.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "unique-names-generator": "^4.7.1"
+    "nodemon": "^3.1.4",
+    "unique-names-generator": "^4.7.1",
+    "zod": "^3.23.8"
   }
 }

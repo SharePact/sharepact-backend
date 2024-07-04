@@ -44,7 +44,7 @@ const createService = async (req, res) => {
     const serviceData = {
       serviceName,
       serviceDescription,
-      subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
+      subscriptionPlans: subscriptionPlans, // Convert JSON string to array
       currency,
       handlingFees,
       logoUrl,

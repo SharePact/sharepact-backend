@@ -3,11 +3,13 @@ const { createService, getServices,  getServiceById, updateService, deleteServic
 const { uploadServiceLogo } = require('../middleware/upload');
 const verifyToken = require('../middleware/auth');
 const verifyAdmin = require('../middleware/admin');
+const { ZodMiddleware } = require('../middleware/zod.middleware');
+const { createServiceSchema } = require('../zodSchemas');
 
 const router = express.Router();
 
 // Routes for services
-router.post('/create', verifyToken, verifyAdmin, uploadServiceLogo, createService); // Only admins can create
+router.post('/', uploadServiceLogo, ZodMiddleware(createServiceSchema), createService); // Only admins can create
 router.get('/', getServices); // Everyone can read
 router.get('/:id',  getServiceById); // Everyone can read
 router.put('/:id', verifyToken, verifyAdmin, uploadServiceLogo, updateService); // Only admins can update

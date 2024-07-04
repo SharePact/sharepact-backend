@@ -1,3 +1,5 @@
+require('express-async-errors');
+
 const express = require('express');
 const app = express();
 const cors = require('cors');
@@ -15,6 +17,7 @@ const authRoutes = require('./routes/authRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const { errorHandler } = require('./middleware/errorHandler');
 
 // Use routes
 app.use('/auth', authRoutes);
@@ -22,6 +25,8 @@ app.use('/services', serviceRoutes);
 app.use('/groups', groupRoutes);
 app.use('/categories', categoryRoutes);
 
+
+app.use(errorHandler);
 
 // Start the server
 const PORT = process.env.PORT || 3000;

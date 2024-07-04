@@ -9,7 +9,7 @@ const router = express.Router();
 const upload = multer(); // Multer middleware to handle file uploads
 
 // Create a new category
-router.post('/', verifyToken, verifyAdmin,upload.single('image'), createCategory);
+router.post('/', upload.single('image'), createCategory);
 
 // Get all categories
 router.get('/', verifyToken, getCategories);

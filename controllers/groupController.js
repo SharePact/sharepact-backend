@@ -5,11 +5,27 @@ const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
   return subscriptionCost / numberOfMembers;
 };
 
+// Function to generate a random 4-digit code
+const generateGroupCode = () => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
 // Create a new group
 exports.createGroup = async (req, res) => {
   try {
-    const { subscriptionService, groupName, subscriptionPlan, numberOfMembers, groupPrivacy } = req.body;
+    const { subscriptionService, groupName, subscriptionPlan, numberOfMembers, 
+      accessType, username, password } = req.body;
+    
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
+    
+    // Validate input fields
+    // if (!subscriptionService || !groupName || !subscriptionPlan || !numberOfMembers || !accessType) {
+    //   return res.status(400).json({ error: 'Missing required fields' });
+    // }
+
+    if (accessType === 'login' && (!username || !password)) {
+      return res.status(400).json({ error: 'Username and password are required for login access' });
+    }
 
     // Fetch service details for subscription cost and handling fees
     const serviceRef = firestore.collection('services').doc(subscriptionService);
@@ -27,10 +43,12 @@ exports.createGroup = async (req, res) => {
       return res.status(400).json({ error: 'Invalid subscription plan' });
     }
 
+    
     const { price } = selectedPlan;
 
     // Calculate subscription cost and individual share
-    const subscriptionCost = price;
+    // TODO: FIXXX THISS!
+    const subscriptionCost = price || 10;
     const individualShare = calculateIndividualShare(subscriptionCost, numberOfMembers);
 
     // Calculate total cost including handling fee
@@ -40,6 +58,9 @@ exports.createGroup = async (req, res) => {
     // Fetch admin's username from Firebase Authentication
     const userRecord = await admin.auth().getUser(uid);
     const adminUsername = userRecord.displayName || userRecord.email || 'Unknown';
+
+    // Generate a unique group code
+    const groupCode = generateGroupCode();
 
     // Create a new group document
     const groupData = {
@@ -51,14 +72,20 @@ exports.createGroup = async (req, res) => {
       subscriptionCost,
       handlingFee,
       individualShare,
-      totalCost, 
-      groupPrivacy: groupPrivacy === 'private', // Convert to boolean
+      totalCost,
+      accessType,
+      groupCode,
       admin: {
         uid,
         username: adminUsername
       },
       createdAt: new Date().toISOString(),
     };
+
+    if (accessType === 'login') {
+      groupData.username = username;
+      groupData.password = password;
+    }
 
     const groupRef = await firestore.collection('groups').add(groupData);
     const groupId = groupRef.id;
@@ -71,126 +98,59 @@ exports.createGroup = async (req, res) => {
 
     await firestore.collection('chats').doc(groupId).set(chatData);
 
-    res.status(201).json({ message: 'Group created successfully', id: groupId, ...groupData });
+    res.status(201).json({
+      message: 'Group created successfully',
+      id: groupId,
+      groupCode,
+      ...groupData
+    });
   } catch (error) {
     console.error('Error creating group:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-
-// Fetch all groups
-exports.getAllGroups = async (req, res) => {
-    try {
-      const groupsRef = firestore.collection('groups');
-      const querySnapshot = await groupsRef.get();
-  
-      if (querySnapshot.empty) {
-        return res.status(404).json({ error: 'No groups found' });
-      }
-  
-      const groups = [];
-      querySnapshot.forEach((doc) => {
-        groups.push({ id: doc.id, ...doc.data() });
-      });
-  
-      res.status(200).json({
-        message: 'All groups fetched successfully',
-        groups: groups
-      });
-    } catch (error) {
-      console.error('Error fetching all groups:', error);
-      res.status(500).json({ error: error.message });
-    }
-  };
-// Fetch groups by subscription service
-exports.getGroupsByService = async (req, res) => {
-  const { serviceId } = req.params;
-
+// Join a group by code
+exports.joinGroupByCode = async (req, res) => {
   try {
-    const groupsRef = firestore.collection('groups');
-    const querySnapshot = await groupsRef.where('subscriptionService', '==', serviceId).get();
-
-    if (querySnapshot.empty) {
-      return res.status(404).json({ error: 'No groups found for this service' });
-    }
-
-    // Fetch service name from Firestore based on serviceId
-    const serviceDoc = await firestore.collection('services').doc(serviceId).get();
-    if (!serviceDoc.exists) {
-      return res.status(404).json({ error: 'Service not found' });
-    }
-
-    const { serviceName } = serviceDoc.data();
-
-    const groups = [];
-    querySnapshot.forEach((doc) => {
-      groups.push({ id: doc.id, ...doc.data() });
-    });
-
-    res.status(200).json({
-      message: `All groups for ${serviceName} fetched successfully`,
-      groups: groups,
-      serviceName: serviceName
-    });
-  } catch (error) {
-    console.error('Error fetching groups by service:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Join a public or private group
-exports.joinGroup = async (req, res) => {
-  try {
-    const { groupId } = req.params;
+    const { groupCode } = req.body;
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
 
-    // Fetch group details
-    const groupRef = firestore.collection('groups').doc(groupId);
-    const groupDoc = await groupRef.get();
+    // Fetch group details by group code
+    const groupsRef = firestore.collection('groups');
+    const querySnapshot = await groupsRef.where('groupCode', '==', groupCode).get();
 
-    if (!groupDoc.exists) {
+    if (querySnapshot.empty) {
       return res.status(404).json({ error: 'Group not found' });
     }
 
+    const groupDoc = querySnapshot.docs[0];
     const groupData = groupDoc.data();
-    
-    // Check group privacy
-    if (groupData.groupPrivacy === false) {
-      // Public group: Directly add user to group chat (update logic as per your implementation)
-      // For example, add user to group chat document
-      const chatRef = firestore.collection('chats').doc(groupId);
-      // Example logic: chatRef.collection('members').doc(uid).set({}); 
+    const groupId = groupDoc.id;
 
-      return res.status(200).json({ message: 'Joined public group successfully' });
-    } else if (groupData.groupPrivacy === true) {
-      // Private group: User requests to join
-      const joinRequestRef = groupRef.collection('joinRequests').doc(uid);
+    // Create join request
+    const joinRequestRef = groupDoc.ref.collection('joinRequests').doc(uid);
 
-      // Check if request already exists
-      const joinRequestDoc = await joinRequestRef.get();
-      if (joinRequestDoc.exists) {
-        return res.status(400).json({ error: 'Already requested to join this group' });
-      }
-
-      // Create join request
-      await joinRequestRef.set({
-        userId: uid,
-        createdAt: new Date().toISOString(),
-        status: 'pending' // pending/accepted/rejected
-      });
-
-      return res.status(200).json({ message: 'Join request sent to admin' });
-    } else {
-      return res.status(400).json({ error: 'Invalid group privacy setting' });
+    // Check if request already exists
+    const joinRequestDoc = await joinRequestRef.get();
+    if (joinRequestDoc.exists) {
+      return res.status(400).json({ error: 'Already requested to join this group' });
     }
+
+    await joinRequestRef.set({
+      userId: uid,
+      createdAt: new Date().toISOString(),
+      status: 'pending' // pending/accepted/rejected
+    });
+
+    res.status(200).json({ message: 'Join request sent to admin', groupId });
   } catch (error) {
-    console.error('Error joining group:', error);
+    console.error('Error joining group by code:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Admin accepts/rejects join requests for private groups
+// Admin accepts/rejects join requests for groups
 exports.processJoinRequest = async (req, res) => {
   try {
     const { groupId, userId } = req.params;
@@ -239,6 +199,67 @@ exports.processJoinRequest = async (req, res) => {
     }
   } catch (error) {
     console.error('Error processing join request:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Fetch all groups
+exports.getAllGroups = async (req, res) => {
+  try {
+    const groupsRef = firestore.collection('groups');
+    const querySnapshot = await groupsRef.get();
+
+    if (querySnapshot.empty) {
+      return res.status(404).json({ error: 'No groups found' });
+    }
+
+    const groups = [];
+    querySnapshot.forEach((doc) => {
+      groups.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.status(200).json({
+      message: 'All groups fetched successfully',
+      groups: groups
+    });
+  } catch (error) {
+    console.error('Error fetching all groups:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Fetch groups by subscription service
+exports.getGroupsByService = async (req, res) => {
+  const { serviceId } = req.params;
+
+  try {
+    const groupsRef = firestore.collection('groups');
+    const querySnapshot = await groupsRef.where('subscriptionService', '==', serviceId).get();
+
+    if (querySnapshot.empty) {
+      return res.status(404).json({ error: 'No groups found for this service' });
+    }
+
+    // Fetch service name from Firestore based on serviceId
+    const serviceDoc = await firestore.collection('services').doc(serviceId).get();
+    if (!serviceDoc.exists) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    const { serviceName } = serviceDoc.data();
+
+    const groups = [];
+    querySnapshot.forEach((doc) => {
+      groups.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.status(200).json({
+      message: `All groups for ${serviceName} fetched successfully`,
+      groups: groups,
+      serviceName: serviceName
+    });
+  } catch (error) {
+    console.error('Error fetching groups by service:', error);
     res.status(500).json({ error: error.message });
   }
 };
