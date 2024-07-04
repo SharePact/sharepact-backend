@@ -180,6 +180,7 @@ exports.processJoinRequest = async (req, res) => {
       // Example: const chatRef = firestore.collection('chats').doc(groupId);
       // Example: chatRef.collection('members').doc(userId).set({});
 
+      // TODO: verify number of members have not been exceeded
       // Update join request status
       group.members.push(user._id);
       await group.save()
