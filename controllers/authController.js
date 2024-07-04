@@ -1,6 +1,7 @@
 const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator');
 const { admin, firestore } = require('../firebase/admin');
 const { auth: firebaseAuth } = require('../firebase/client');
+const { UserModel } = require('../models');
 
 // Function to generate a random unique username
 function generateRandomUsername() {
@@ -31,6 +32,9 @@ exports.signupWithEmail = async (req, res) => {
       username: randomUsername,
       role: 'user'
     };
+
+    // track in database for easier population and etc.
+    await UserModel.create(userData);
 
     await firestore.collection('users').doc(userRecord.uid).set(userData);
 

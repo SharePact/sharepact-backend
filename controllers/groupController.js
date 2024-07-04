@@ -1,4 +1,5 @@
 const { firestore, admin } = require('../firebase/admin');
+const { UserModel, GroupModel, GroupJoinRequestModel } = require('../models');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -98,7 +99,15 @@ exports.createGroup = async (req, res) => {
 
     await firestore.collection('chats').doc(groupId).set(chatData);
 
-    res.status(201).json({
+    // create group in mongo collection
+    const admin = await UserModel.findOne({ uid })
+
+    await GroupModel.create({
+      ...groupData,
+      admin: admin._id
+    })
+
+    return res.status(201).json({
       message: 'Group created successfully',
       id: groupId,
       groupCode,
@@ -116,37 +125,29 @@ exports.joinGroupByCode = async (req, res) => {
     const { groupCode } = req.body;
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
 
+    // TODO: Implement service endpoint for this!!!
+    const user = await UserModel.findOne({ uid })
+
     // Fetch group details by group code
-    const groupsRef = firestore.collection('groups');
-    const querySnapshot = await groupsRef.where('groupCode', '==', groupCode).get();
+    let group = await GroupModel.findOne({ groupCode })
 
-    if (querySnapshot.empty) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
+    // TODO: Implement NotFound error!!!
+    if(!group) return res.status(404).json({ message: 'No group with this code was found' });
 
-    const groupDoc = querySnapshot.docs[0];
-    const groupData = groupDoc.data();
-    const groupId = groupDoc.id;
+    // check for existing invite
+    let invite = await GroupJoinRequestModel.findOne({ group: group._id, user })
 
-    // Create join request
-    const joinRequestRef = groupDoc.ref.collection('joinRequests').doc(uid);
+    if(invite) return res.status(400).json({ message: 'You have already sent a request to join this group' })
+    
+    await GroupJoinRequestModel.create({
+      group: group._id,
+      user: user._id,
+    })
 
-    // Check if request already exists
-    const joinRequestDoc = await joinRequestRef.get();
-    if (joinRequestDoc.exists) {
-      return res.status(400).json({ error: 'Already requested to join this group' });
-    }
-
-    await joinRequestRef.set({
-      userId: uid,
-      createdAt: new Date().toISOString(),
-      status: 'pending' // pending/accepted/rejected
-    });
-
-    res.status(200).json({ message: 'Join request sent to admin', groupId });
+    return res.status(200).json({ message: 'Join request sent to admin', groupId: group._id });
   } catch (error) {
     console.error('Error joining group by code:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
