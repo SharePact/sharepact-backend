@@ -26,6 +26,7 @@ exports.GroupModelSchema = new Schema({
     password: { type: String, required: false },
     admin: { type: Types.ObjectId, required: true, ref: "User" },
     members: { type: [Types.ObjectId], ref: "User", default: [] },
+    activated: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 })
 
@@ -34,6 +35,7 @@ exports.GroupModel = model('Group', this.GroupModelSchema);
 
 exports.JoinRequestModelSchema = new Schema({
     group: { type: Types.ObjectId, required: true, ref: "Group" },
+    // serviceId: { type: String, required: true },
     user: { type: Types.ObjectId, required: true, ref: "User" },
     status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" }
 })
@@ -43,6 +45,10 @@ exports.GroupJoinRequestModel = model('GroupJoinRequest', this.JoinRequestModelS
 exports.GroupMembershipModelSchema = new Schema({
     group: { type: Types.ObjectId, required: true, ref: "Group" },
     user: { type: Types.ObjectId, required: true, ref: "User" },
+    serviceId: { type: String, required: true },
+    active: { type: Boolean, default: false },
+    passwordViews: { type: Number, default: 2 },
+    confirmedAccess: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 })
 

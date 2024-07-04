@@ -1,6 +1,8 @@
 const { request } = require('express');
 const { firestore, admin } = require('../firebase/admin');
 const { UserModel, GroupModel, GroupJoinRequestModel, GroupMembershipModel } = require('../models');
+const { NotFoundError } = require('../errors/not-found-error');
+const { NotAuthorizedError } = require('../errors/not-authorized-error');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -20,10 +22,12 @@ exports.createGroup = async (req, res) => {
     
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
     
-    // Validate input fields
-    // if (!subscriptionService || !groupName || !subscriptionPlan || !numberOfMembers || !accessType) {
-    //   return res.status(400).json({ error: 'Missing required fields' });
-    // }
+    const user = await UserModel.findOne({ uid })
+
+    const existingGroup = await GroupModel.findOne({ user: user._id, subscriptionService })
+
+    if(existingGroup) 
+      throw new NotAuthorizedError("you have already created a group with similar service")
 
     if (accessType === 'login' && (!username || !password)) {
       return res.status(400).json({ error: 'Username and password are required for login access' });
@@ -132,17 +136,25 @@ exports.joinGroupByCode = async (req, res) => {
     // Fetch group details by group code
     let group = await GroupModel.findOne({ groupCode })
 
-    // TODO: Implement NotFound error!!!
-    if(!group) return res.status(404).json({ message: 'No group with this code was found' });
+    // check if you're already on a group with the same service name
+    let existingMember = await GroupMembershipModel.findOne({ user: user._id, 
+      serviceId: group.subscriptionService })
+    
+    if(existingMember) return res.status(400).json({ 
+      message: 'You have joined an existing service group.' })
 
-    // check for existing invite
-    let invite = await GroupJoinRequestModel.findOne({ group: group._id, user })
+    if(!group) throw new NotFoundError('No group with this code was found');
+
+    // check for existing invite: whether you're already in the group or whether you've sent request
+    let invite = 
+    await GroupJoinRequestModel.findOne({ group: group._id, user: user._id }) || await GroupMembershipModel.findOne({ group: group._id, user: user._id })
 
     if(invite) return res.status(400).json({ message: 'You have already sent a request to join this group' })
     
     await GroupJoinRequestModel.create({
       group: group._id,
       user: user._id,
+      serviceName: group.serviceName
     })
 
     return res.status(200).json({ message: 'Join request sent to admin', groupId: group._id });
@@ -265,3 +277,20 @@ exports.getGroupsByService = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+exports.editGroupDetails = async (req, res) => {
+  let group = await GroupModel.findById(req.params.groupId);
+
+  if(!group) throw new NotFoundError("group not found");
+
+  let groupAdmin = await UserModel.findOne({ _id: group.admin });
+
+  if(groupAdmin.uid !== req.user.uid) 
+    throw new NotAuthorizedError("only the group admin can edit this group")
+
+  // TODO: username and password editing
+  // TODO: activated editing
+
+  let { username, password, activated } = req.body;
+}

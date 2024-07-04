@@ -1,4 +1,4 @@
-const { string, number, array, z } = require('zod');
+const { string, number, array, z, boolean } = require('zod');
 
 exports.createGroupSchema = z.object({
     subscriptionService: string({ required_error: "subscription services is required" }),
@@ -27,4 +27,11 @@ exports.createServiceSchema = z.object({
 
 exports.processJoinRequest = z.object({
     action: z.enum(["accept", "reject"], { required_error: "accept or reject this request" })
+})
+
+exports.editGroupSchema = z.object({
+    username: string().optional(),
+    password: string().optional(),
+    groupName: string().optional(),
+    activated: boolean().default(false)
 })
