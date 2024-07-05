@@ -4,9 +4,14 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const dotenv = require('dotenv');
+const mongoose = require('mongoose');
 
 // Load environment variables from .env file
 dotenv.config();
+
+mongoose
+.connect(process.env.MONGO_URI)
+.then(() => console.log("Successfully connected to db"));
 
 // Middleware
 app.use(express.json());

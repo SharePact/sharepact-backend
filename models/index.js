@@ -52,4 +52,4 @@ exports.GroupMembershipModelSchema = new Schema({
     createdAt: { type: Date, default: Date.now }
 })
 
-exports.GroupMembershipModel = model('GroupMembership', this.GroupMembershipModel)
+exports.GroupMembershipModel = model('GroupMembership', this.GroupMembershipModelSchema)

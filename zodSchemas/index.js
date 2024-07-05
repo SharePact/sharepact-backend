@@ -5,7 +5,7 @@ exports.createGroupSchema = z.object({
     groupName: string({ required_error: "group name is required" }),
     subscriptionPlan: string({ required_error: "subscription plan is required" }),
     numberOfMembers: number({ required_error: "number of members is required" }),
-    accessType: string({ required_error: "access type is required" }),
+    accessType: z.enum(["login", "invite"], { required_error: "provide a valid access type" }),
     username: string().optional(),
     password: string().optional(),
 }).strict();
@@ -25,7 +25,7 @@ exports.createServiceSchema = z.object({
     categoryId: string({ required_error: "category id is required" }),
 }).strict();
 
-exports.processJoinRequest = z.object({
+exports.processJoinRequestSchema = z.object({
     action: z.enum(["accept", "reject"], { required_error: "accept or reject this request" })
 })
 

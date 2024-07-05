@@ -3,6 +3,7 @@ const { firestore, admin } = require('../firebase/admin');
 const { UserModel, GroupModel, GroupJoinRequestModel, GroupMembershipModel } = require('../models');
 const { NotFoundError } = require('../errors/not-found-error');
 const { NotAuthorizedError } = require('../errors/not-authorized-error');
+const { Types } = require('mongoose');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -21,7 +22,6 @@ exports.createGroup = async (req, res) => {
       accessType, username, password } = req.body;
     
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
-    
     const user = await UserModel.findOne({ uid })
 
     const existingGroup = await GroupModel.findOne({ user: user._id, subscriptionService })
@@ -105,11 +105,11 @@ exports.createGroup = async (req, res) => {
     await firestore.collection('chats').doc(groupId).set(chatData);
 
     // create group in mongo collection
-    const admin = await UserModel.findOne({ uid })
+    const groupAdmin = await UserModel.findOne({ uid })
 
     await GroupModel.create({
       ...groupData,
-      admin: admin._id
+      admin: groupAdmin._id
     })
 
     return res.status(201).json({
@@ -125,16 +125,21 @@ exports.createGroup = async (req, res) => {
 };
 
 // Join a group by code
-exports.joinGroupByCode = async (req, res) => {
+exports.requestToJoinGroup = async (req, res) => {
   try {
-    const { groupCode } = req.body;
+    const groupCode = req.params.groupId;
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
 
     // TODO: Implement service endpoint for this!!!
     const user = await UserModel.findOne({ uid })
 
     // Fetch group details by group code
-    let group = await GroupModel.findOne({ groupCode })
+    let group = await GroupModel.findById(groupCode);
+
+    // group creator can not join group
+    if(group.admin.toString() === user._id.toString())
+      return res.status(400).json({ 
+        message: 'Group admin can not join his own group' })
 
     // check if you're already on a group with the same service name
     let existingMember = await GroupMembershipModel.findOne({ user: user._id, 
@@ -170,7 +175,9 @@ exports.processJoinRequest = async (req, res) => {
     const { requestId } = req.params;
     const { action } = req.body; // 'accept' or 'reject'
 
-    let groupRequest = await GroupJoinRequestModel.findOne({ requestId, status: "pending" })
+    let groupRequest = await GroupJoinRequestModel.findOne({ 
+      _id: new Types.ObjectId(requestId), status: "pending" 
+    })
 
     if(!groupRequest) return res.status(404).json({ message: 'No join request was found' });
 
@@ -178,7 +185,7 @@ exports.processJoinRequest = async (req, res) => {
 
     if(!group) return res.status(404).json({ message: 'No group was found' });
 
-    let user = await UserModel.findOne({ uid: request.user.uid });
+    let user = await UserModel.findOne({ uid: req.user.uid });
     let groupAdmin = await UserModel.findOne({ _id: group.admin });
 
     // Verify admin permission (assuming req.user.uid is admin's uid)
@@ -197,7 +204,8 @@ exports.processJoinRequest = async (req, res) => {
       group.members.push(user._id);
       await group.save()
 
-      await GroupMembershipModel.create({ user: user._id, group: group._id })
+      await GroupMembershipModel.create({ user: user._id, group: group._id, 
+        serviceId: group.subscriptionService })
 
       groupRequest.status = "accepted"
       await groupRequest.save()
