@@ -1,9 +1,10 @@
 const { request } = require('express');
 const { firestore, admin } = require('../firebase/admin');
-const { UserModel, GroupModel, GroupJoinRequestModel, GroupMembershipModel } = require('../models');
+const { UserModel, GroupModel, GroupJoinRequestModel, GroupMembershipModel, GroupPaymentModel } = require('../models');
 const { NotFoundError } = require('../errors/not-found-error');
 const { NotAuthorizedError } = require('../errors/not-authorized-error');
 const { Types } = require('mongoose');
+const { BadRequestError } = require('../errors/bad-request-error');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -296,9 +297,52 @@ exports.editGroupDetails = async (req, res) => {
 
   if(groupAdmin.uid !== req.user.uid) 
     throw new NotAuthorizedError("only the group admin can edit this group")
-
-  // TODO: username and password editing
-  // TODO: activated editing
-
+  
   let { username, password, activated } = req.body;
+
+  if((username || password) && activated !== undefined) 
+    throw new BadRequestError("perform only one edit action (username or password edit) or set group as activated.");
+
+  if(group.activated && activated !== undefined) throw new BadRequestError("group has already been activated")
+  
+  if(!group.activated && activated){
+    // activate group logic
+    // send invoices basically
+    // calculate amount based on handling fees and cost
+    
+    let members = await GroupMembershipModel.find({ group: group._id })
+
+    const individualShare = calculateIndividualShare(group.subscriptionCost, members.length);
+    // Calculate total cost including handling fee
+    const handlingFee = parseFloat(group.handlingFee);
+    const totalCost = individualShare + handlingFee;
+
+    for(const member of members){
+      await GroupPaymentModel.create({ member: member._id, amount: totalCost })
+    }
+
+    return res.json({ 
+      status: "success", 
+      message: "Successfully activated group. Invoices have been sent to all members"
+    });
+  }
+
+  let changedLoginDetails = false;
+  if(username && username !== group.username){
+    changedLoginDetails = true;
+    group.username = username;
+  }
+
+  if(password && password !== group.password){
+    changedLoginDetails = true;
+    group.password = password;
+  }
+
+  if(changedLoginDetails){
+    await group.save()
+    // reset members password views
+    await GroupMembershipModel.updateMany({ group: group._id }, { $set: { passwordViews: 2 }});
+  }
+
+  return res.json({ message: "Successfully updated group details." })
 }

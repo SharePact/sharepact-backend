@@ -53,3 +53,12 @@ exports.GroupMembershipModelSchema = new Schema({
 })
 
 exports.GroupMembershipModel = model('GroupMembership', this.GroupMembershipModelSchema)
+
+exports.GroupPaymentSchema = new Schema({
+    member: { type: Types.ObjectId, required: true, ref: "GroupMembership" },
+    amount: { type: Number, required: true },
+    paid: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+})
+
+exports.GroupPaymentModel = model("GroupPayment", this.GroupPaymentSchema)
