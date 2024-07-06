@@ -321,6 +321,9 @@ exports.editGroupDetails = async (req, res) => {
       await GroupPaymentModel.create({ member: member._id, amount: totalCost })
     }
 
+    group.activated = true;
+    await group.save()
+
     return res.json({ 
       status: "success", 
       message: "Successfully activated group. Invoices have been sent to all members"
