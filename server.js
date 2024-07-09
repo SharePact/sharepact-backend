@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const categoryRoutes = require('./routes/category'); 
 const serviceRoutes = require('./routes/service'); 
+const profileRoutes = require('./routes/profile');
+const bankDetailsRoutes = require('./routes/bankdetails');
+
 const cors = require('cors');
 
 require('dotenv').config();
@@ -20,7 +23,8 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/auth', authRoutes); // Use authRoutes for '/auth' routes
 app.use('/api/categories', categoryRoutes); // Mount categoryRoutes under '/api/categories'
 app.use('/api/services', serviceRoutes); // Mount serviceRoutes under '/api/services'
-
+app.use('/api/profile', profileRoutes); // Mount profileRoutes under '/api/profile'
+app.use('/api', bankDetailsRoutes); // Mount bankDetailsRoutes
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
