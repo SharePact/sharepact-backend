@@ -1,18 +1,9 @@
-const { firestore, storage } = require('../firebase/admin');
+const Service = require('../models/service');
+const Category = require('../models/category');
+const uploadFileToStorage = require('../utils/uploadfiletostorage');
 const { v4: uuidv4 } = require('uuid');
 
-// Helper function to upload file to Firebase Storage
-const uploadFileToStorage = async (fileBuffer, fileName, mimeType) => {
-  const file = storage.file(`logos/${fileName}`);
-  await file.save(fileBuffer, {
-    metadata: { contentType: mimeType },
-    public: true, // Optional: Make the file public
-  });
-  return `https://storage.googleapis.com/${storage.name}/logos/${fileName}`;
-};
-
-// Create a new service
-const createService = async (req, res) => {
+exports.createService = async (req, res) => {
   try {
     const {
       serviceName,
@@ -27,11 +18,10 @@ const createService = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const categoryDoc = await firestore.collection('categories').doc(categoryId).get();
-    if (!categoryDoc.exists) {
+    const category = await Category.findById(categoryId);
+    if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
-    const categoryName = categoryDoc.data().categoryName;
 
     const logoFile = req.file;
     let logoUrl = '';
@@ -44,22 +34,23 @@ const createService = async (req, res) => {
     const serviceData = {
       serviceName,
       serviceDescription,
-      subscriptionPlans: subscriptionPlans, // Convert JSON string to array
+      subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
       currency,
       handlingFees,
       logoUrl,
       categoryId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
-    const docRef = await firestore.collection('services').add(serviceData);
+    const service = new Service(serviceData);
+    await service.save();
 
     res.status(201).json({
       message: 'Service created successfully',
-      id: docRef.id,
-      categoryName, // Include category name in the response
-      ...serviceData
+      id: service._id,
+      categoryName: category.categoryName, // Include category name in the response
+      ...serviceData,
     });
   } catch (error) {
     console.error('Error creating service:', error);
@@ -67,11 +58,9 @@ const createService = async (req, res) => {
   }
 };
 
-// Get all services
-const getServices = async (req, res) => {
+exports.getServices = async (req, res) => {
   try {
-    const servicesSnapshot = await firestore.collection('services').get();
-    const services = servicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const services = await Service.find();
     res.status(200).json({ message: 'Services fetched successfully', services });
   } catch (error) {
     console.error('Error fetching services:', error);
@@ -79,27 +68,24 @@ const getServices = async (req, res) => {
   }
 };
 
-// Get a specific service by ID
-const getServiceById = async (req, res) => {
+exports.getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
-    const doc = await firestore.collection('services').doc(id).get();
-    if (!doc.exists) {
+    const service = await Service.findById(id);
+    if (!service) {
       return res.status(404).json({ error: 'Service not found' });
     }
-    const serviceData = doc.data();
 
-    const categoryDoc = await firestore.collection('categories').doc(serviceData.categoryId).get();
-    if (!categoryDoc.exists) {
+    const category = await Category.findById(service.categoryId);
+    if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
-    const categoryName = categoryDoc.data().categoryName;
 
     res.status(200).json({
       message: 'Service fetched successfully',
-      id: doc.id,
-      categoryName, // Include category name in the response
-      ...serviceData
+      id: service._id,
+      categoryName: category.categoryName, // Include category name in the response
+      ...service._doc,
     });
   } catch (error) {
     console.error('Error fetching service:', error);
@@ -107,8 +93,7 @@ const getServiceById = async (req, res) => {
   }
 };
 
-// Update an existing service
-const updateService = async (req, res) => {
+exports.updateService = async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -120,7 +105,7 @@ const updateService = async (req, res) => {
       categoryId,
     } = req.body;
 
-    if (!serviceName || !serviceDescription || !subscriptionPlans || !currency || categoryId) {
+    if (!serviceName || !serviceDescription || !subscriptionPlans || !currency || !categoryId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -131,7 +116,7 @@ const updateService = async (req, res) => {
       currency,
       handlingFees,
       categoryId,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     if (req.file) {
@@ -140,30 +125,28 @@ const updateService = async (req, res) => {
       serviceData.logoUrl = await uploadFileToStorage(logoFile.buffer, logoFileName, logoFile.mimetype);
     }
 
-    await firestore.collection('services').doc(id).update(serviceData);
-    res.status(200).json({ message: 'Service updated successfully', id, ...serviceData });
+    const updatedService = await Service.findByIdAndUpdate(id, serviceData, { new: true });
+    if (!updatedService) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    res.status(200).json({ message: 'Service updated successfully', id, ...updatedService._doc });
   } catch (error) {
     console.error('Error updating service:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Delete a service
-const deleteService = async (req, res) => {
+exports.deleteService = async (req, res) => {
   try {
     const { id } = req.params;
-    await firestore.collection('services').doc(id).delete();
+    const deletedService = await Service.findByIdAndDelete(id);
+    if (!deletedService) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
     res.status(200).json({ message: 'Service deleted successfully' });
   } catch (error) {
     console.error('Error deleting service:', error);
     res.status(500).json({ error: error.message });
   }
-};
-
-module.exports = {
-  createService,
-  getServices,
-  getServiceById,
-  updateService,
-  deleteService,
 };

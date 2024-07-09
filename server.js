@@ -1,42 +1,33 @@
-require('express-async-errors');
-
 const express = require('express');
-const app = express();
-const cors = require('cors');
-const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const authRoutes = require('./routes/auth');
+const categoryRoutes = require('./routes/category'); 
+const serviceRoutes = require('./routes/service'); 
+const cors = require('cors');
 
-// Load environment variables from .env file
-dotenv.config();
+require('dotenv').config();
 
-mongoose
-.connect(process.env.MONGO_URI)
-.then(() => console.log("Successfully connected to db"));
-
-// Middleware
+const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const serviceRoutes = require('./routes/serviceRoutes');
-const groupRoutes = require('./routes/groupRoutes');
-const categoryRoutes = require('./routes/categoryRoutes');
-const { errorHandler } = require('./middleware/errorHandler');
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected...'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// Use routes
-app.use('/auth', authRoutes);
-app.use('/services', serviceRoutes);
-app.use('/groups', groupRoutes);
-app.use('/categories', categoryRoutes);
+// Routes
+app.use('/auth', authRoutes); // Use authRoutes for '/auth' routes
+app.use('/api/categories', categoryRoutes); // Mount categoryRoutes under '/api/categories'
+app.use('/api/services', serviceRoutes); // Mount serviceRoutes under '/api/services'
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
 
-app.use(errorHandler);
-
-// Start the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-module.exports = app;
