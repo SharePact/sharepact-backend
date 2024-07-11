@@ -1,10 +1,12 @@
 const { request } = require('express');
 const { firestore, admin } = require('../firebase/admin');
-const { UserModel, GroupModel, GroupJoinRequestModel, GroupMembershipModel, GroupPaymentModel } = require('../models');
+const { GroupModel, GroupJoinRequestModel, GroupMembershipModel, GroupPaymentModel } = require('../models');
+const UserModel = require('../models/user')
 const { NotFoundError } = require('../errors/not-found-error');
 const { NotAuthorizedError } = require('../errors/not-authorized-error');
 const { Types } = require('mongoose');
 const { BadRequestError } = require('../errors/bad-request-error');
+const { generatePaystackCheckoutLink } = require('../utils/payment');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -63,7 +65,7 @@ exports.createGroup = async (req, res) => {
     const totalCost = individualShare + handlingFee;
 
     // Fetch admin's username from Firebase Authentication
-    const userRecord = await admin.auth().getUser(uid);
+    const userRecord = await UserModel.findById(uid);
     const adminUsername = userRecord.displayName || userRecord.email || 'Unknown';
 
     // Generate a unique group code
@@ -106,7 +108,7 @@ exports.createGroup = async (req, res) => {
     await firestore.collection('chats').doc(groupId).set(chatData);
 
     // create group in mongo collection
-    const groupAdmin = await UserModel.findOne({ uid })
+    const groupAdmin = await UserModel.findById(uid)
 
     await GroupModel.create({
       ...groupData,
@@ -132,7 +134,7 @@ exports.requestToJoinGroup = async (req, res) => {
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
 
     // TODO: Implement service endpoint for this!!!
-    const user = await UserModel.findOne({ uid })
+    const user = await UserModel.findById(uid)
 
     // Fetch group details by group code
     let group = await GroupModel.findById(groupCode);
@@ -190,7 +192,7 @@ exports.processJoinRequest = async (req, res) => {
     let groupAdmin = await UserModel.findOne({ _id: group.admin });
 
     // Verify admin permission (assuming req.user.uid is admin's uid)
-    if (req.user.uid !== groupAdmin.uid) {
+    if (req.user.uid !== groupAdmin.id) {
       return res.status(403).json({ error: 'Unauthorized: Only admin can process join requests' });
     }
 
@@ -318,7 +320,7 @@ exports.editGroupDetails = async (req, res) => {
     const totalCost = individualShare + handlingFee;
 
     for(const member of members){
-      await GroupPaymentModel.create({ member: member._id, amount: totalCost })
+      await GroupPaymentModel.create({ member: member._id, amount: totalCost, user: member.user })
     }
 
     group.activated = true;
@@ -350,14 +352,32 @@ exports.editGroupDetails = async (req, res) => {
   return res.json({ message: "Successfully updated group details." })
 }
 
+exports.listPendingGroupPayments = async (req, res) => {
+  let payments = await GroupPaymentModel.find({
+    user: new Types.ObjectId(req.user.uid), paid: false
+  })
+
+  return res.json({ payments })
+}
+
 exports.makeGroupPayment = async (req, res) => {
   let { paymentId } = req.params
 
-  let payment = await GroupPaymentModel.findById(paymentId);
+  let payment = await GroupPaymentModel.findOne({_id: paymentId, user: new Types.ObjectId(req.user.uid) });
 
   if(!payment) throw new NotFoundError("no existing payment was found");
 
+  if(payment.paid) throw new BadRequestError("you have already made this payment")
+
   let user = await UserModel.findById(req.user.id);
 
-  
+  let { authorization_url, reference } = await generatePaystackCheckoutLink(user.email, payment.amount);
+
+  payment.reference = reference;
+  await payment.save()
+
+  return res.json({
+    checkoutLink: authorization_url,
+    payment
+  })
 }
