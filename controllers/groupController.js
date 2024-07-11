@@ -349,3 +349,15 @@ exports.editGroupDetails = async (req, res) => {
 
   return res.json({ message: "Successfully updated group details." })
 }
+
+exports.makeGroupPayment = async (req, res) => {
+  let { paymentId } = req.params
+
+  let payment = await GroupPaymentModel.findById(paymentId);
+
+  if(!payment) throw new NotFoundError("no existing payment was found");
+
+  let user = await UserModel.findById(req.user.id);
+
+  
+}
