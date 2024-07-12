@@ -1,5 +1,10 @@
 const { string, number, array, z, boolean } = require('zod');
 
+exports.createUserSchema = z.object({
+    email: string({ required_error: "email is required" }).email(),
+    password: string({ required_error: "password is required" }).min(6),
+}).strict();
+
 exports.createGroupSchema = z.object({
     subscriptionService: string({ required_error: "subscription services is required" }),
     groupName: string({ required_error: "group name is required" }),
