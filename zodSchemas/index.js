@@ -44,3 +44,8 @@ exports.processJoinRequestSchema = z.object({
 exports.editGroupSchema = z.object({
     activated: boolean().default(false)
 })
+
+
+exports.confirmMemberReadySchema = z.object({
+    ready: boolean().default(false)
+})

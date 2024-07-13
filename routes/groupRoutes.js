@@ -1,5 +1,6 @@
 const express = require('express');
-const { createGroup,getGroupsByService,getAllGroups, requestToJoinGroup, processJoinRequest} = require('../controllers/groupController');
+const { createGroup,getGroupsByService,getAllGroups, requestToJoinGroup,
+    processJoinRequest, toggleMemberReady } = require('../controllers/groupController');
 const verifyToken = require('../middleware/auth');
 const { ZodMiddleware } = require('../middleware/zod.middleware');
 const { createGroupSchema, processJoinRequestSchema } = require('../zodSchemas');
@@ -21,5 +22,7 @@ router.post('/join-requests/:requestId', checkAuth,
 
 
 router.get("/:groupId/messages")
+
+router.post("/:groupId/members/ready", checkAuth, toggleMemberReady);
 
 module.exports = router;

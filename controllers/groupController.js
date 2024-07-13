@@ -398,3 +398,30 @@ exports.createGroupMessage = async (req, res) => {
 
   return res.json({ message })
 }
+
+
+exports.toggleMemberReady = async (req, res) => {
+  let user = await UserModel.findById(req.user.uid);
+  let group = await GroupModel.findById(req.params.groupId);
+  if(!group) throw new NotFoundError("group not found");
+
+  let member = await GroupMembershipModel.findOne({ group: group._id, user: user._id })
+  if(!member) throw new NotAuthorizedError("you are not a member of this group");
+
+  if(!member.active) throw new NotAuthorizedError("only active members of group can be ready");
+
+  let { ready } = req.body;
+
+  member.ready = ready;
+  await member.save();
+
+  // check all members of group
+  let groupMembers = await GroupMembershipModel.find({ group: group._id })
+   
+  if(groupMembers.every(m => m.ready)){
+    // all members are ready
+    // activate group
+    group.activated = true;
+    await group.save()
+  }
+}
