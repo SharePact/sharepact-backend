@@ -37,6 +37,7 @@ exports.JoinRequestModelSchema = new Schema({
     group: { type: Types.ObjectId, required: true, ref: "Group" },
     // serviceId: { type: String, required: true },
     user: { type: Types.ObjectId, required: true, ref: "User" },
+    message: { type: String, default: "" },
     status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" }
 })
 

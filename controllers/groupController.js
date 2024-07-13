@@ -131,14 +131,18 @@ exports.createGroup = async (req, res) => {
 // Join a group by code
 exports.requestToJoinGroup = async (req, res) => {
   try {
-    const groupCode = req.params.groupId;
+    const { serviceId, groupCode, message } = req.body;
+    // const groupCode = req.params.groupId;
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
 
     // TODO: Implement service endpoint for this!!!
     const user = await UserModel.findById(uid)
 
     // Fetch group details by group code
-    let group = await GroupModel.findById(groupCode);
+    let group = await GroupModel.findOne({ 
+      groupCode, 
+      subscriptionService: new Types.ObjectId(serviceId) 
+    });
 
     // group creator can not join group
     if(group.admin.toString() === user._id.toString())
@@ -163,7 +167,8 @@ exports.requestToJoinGroup = async (req, res) => {
     await GroupJoinRequestModel.create({
       group: group._id,
       user: user._id,
-      serviceName: group.serviceName
+      serviceName: group.serviceName,
+      message,
     })
 
     return res.status(200).json({ message: 'Join request sent to admin', groupId: group._id });

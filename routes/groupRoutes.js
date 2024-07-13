@@ -13,13 +13,13 @@ router.get('/:serviceId', checkAuth, getGroupsByService);
 router.get('/', checkAuth, getAllGroups);
 // Route to join a group
 
-router.post('/:groupId/join', checkAuth, requestToJoinGroup);
+router.post('/join', checkAuth, requestToJoinGroup);
 
 // Route to process join request by admin
 router.post('/join-requests/:requestId', checkAuth, 
     ZodMiddleware(processJoinRequestSchema), processJoinRequest);
 
 
-
+router.get("/:groupId/messages")
 
 module.exports = router;

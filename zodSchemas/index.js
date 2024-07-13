@@ -1,4 +1,5 @@
 const { string, number, array, z, boolean } = require('zod');
+const service = require('../models/service');
 
 exports.createUserSchema = z.object({
     email: string({ required_error: "email is required" }).email(),
@@ -28,6 +29,12 @@ exports.createServiceSchema = z.object({
     currency: string({ required_error: "currency is required" }),
     handlingFees: number({ required_error: "handling fees is required" }),
     categoryId: string({ required_error: "category id is required" }),
+}).strict();
+
+exports.sendJoinRequestSchema = z.object({
+    groupCode: string({ required_error: "group id is required" }),
+    serviceId: string({ required_error: "service is required" }),
+    message: string().optional(),
 }).strict();
 
 exports.processJoinRequestSchema = z.object({
