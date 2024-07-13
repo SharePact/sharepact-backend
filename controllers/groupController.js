@@ -1,12 +1,13 @@
 const { request } = require('express');
 const { firestore, admin } = require('../firebase/admin');
-const { GroupModel, GroupJoinRequestModel, GroupMembershipModel, GroupPaymentModel } = require('../models');
+const { GroupModel, GroupJoinRequestModel, GroupMembershipModel, GroupPaymentModel, MessageModel } = require('../models');
 const UserModel = require('../models/user')
 const { NotFoundError } = require('../errors/not-found-error');
 const { NotAuthorizedError } = require('../errors/not-authorized-error');
 const { Types } = require('mongoose');
 const { BadRequestError } = require('../errors/bad-request-error');
 const { generatePaystackCheckoutLink } = require('../utils/payment');
+const { plainWebSocketHandler } = require('../server');
 
 // Function to calculate individual share
 const calculateIndividualShare = (subscriptionCost, numberOfMembers) => {
@@ -369,7 +370,7 @@ exports.makeGroupPayment = async (req, res) => {
 
   if(payment.paid) throw new BadRequestError("you have already made this payment")
 
-  let user = await UserModel.findById(req.user.id);
+  let user = await UserModel.findById(req.user.uid);
 
   let { authorization_url, reference } = await generatePaystackCheckoutLink(user.email, payment.amount);
 
@@ -380,4 +381,39 @@ exports.makeGroupPayment = async (req, res) => {
     checkoutLink: authorization_url,
     payment
   })
+}
+
+
+exports.listGroupMessages = async (req, res) => {
+  let group = await GroupModel.findById(req.params.groupId);
+  if(!group) throw new NotFoundError("group not found");
+
+  let messages = await MessageModel.find({ group: group._id })
+
+  return res.json({ messages, group })
+}
+
+
+exports.createGroupMessage = async (req, res) => {
+  let user = await UserModel.findById(req.user.id);
+  let group = await GroupModel.findById(req.params.groupId);
+  if(!group) throw new NotFoundError("group not found");
+
+  let { text } = req.body
+
+  let message = await MessageModel.create({
+    text,
+    group: group._id,
+    user: user._id
+  })
+
+  // broadcast message to all members except user
+  let members = (await GroupMembershipModel.find({ group: group._id })).map(m => m.user.toString())
+  members.push(group.admin.toString())
+
+  members = members.filter(m => m !== req.user.uid);
+
+  plainWebSocketHandler.broadcastMessage(members, message);
+
+  return res.json({ message })
 }

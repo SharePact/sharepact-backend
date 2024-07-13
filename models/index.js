@@ -63,3 +63,14 @@ exports.GroupPaymentSchema = new Schema({
 })
 
 exports.GroupPaymentModel = model("GroupPayment", this.GroupPaymentSchema)
+
+
+exports.MessageSchema = new Schema({
+    text: { type: String, required: true },
+    group: { type: Types.ObjectId, required: true, ref: "Group" },
+    user: { type: Types.ObjectId, required: true, ref: "User" },
+    eventMessage: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+})
+
+exports.MessageModel = model("Message", this.MessageSchema);

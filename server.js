@@ -6,11 +6,19 @@ const serviceRoutes = require('./routes/service');
 const profileRoutes = require('./routes/profile');
 const bankDetailsRoutes = require('./routes/bankdetails');
 
+const http = require("http")
+
 const cors = require('cors');
+const { PlainWebSocketHandler } = require('./utils/socket');
 
 require('dotenv').config();
 
 const app = express();
+
+const server = http.createServer(app);
+
+exports.plainWebSocketHandler = new PlainWebSocketHandler(server);
+
 app.use(express.json());
 app.use(cors());
 
