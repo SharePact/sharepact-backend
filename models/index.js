@@ -48,6 +48,7 @@ exports.GroupMembershipModelSchema = new Schema({
     user: { type: Types.ObjectId, required: true, ref: "User" },
     serviceId: { type: String, required: true },
     active: { type: Boolean, default: false },
+    ready: { type: Boolean, default: false },
     passwordViews: { type: Number, default: 2 },
     confirmedAccess: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }

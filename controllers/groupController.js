@@ -26,7 +26,7 @@ exports.createGroup = async (req, res) => {
       accessType } = req.body;
     
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
-    const user = await UserModel.findOne({ uid })
+    const user = await UserModel.findById(uid);
 
     const existingGroup = await GroupModel.findOne({ user: user._id, subscriptionService })
 
@@ -190,7 +190,7 @@ exports.processJoinRequest = async (req, res) => {
 
     if(!group) return res.status(404).json({ message: 'No group was found' });
 
-    let user = await UserModel.findOne({ uid: req.user.uid });
+    let user = await UserModel.findById(req.user.uid);
     let groupAdmin = await UserModel.findOne({ _id: group.admin });
 
     // Verify admin permission (assuming req.user.uid is admin's uid)
@@ -299,7 +299,7 @@ exports.editGroupDetails = async (req, res) => {
 
   let groupAdmin = await UserModel.findOne({ _id: group.admin });
 
-  if(groupAdmin.uid !== req.user.uid) 
+  if(groupAdmin.id !== req.user.id) 
     throw new NotAuthorizedError("only the group admin can edit this group")
   
   let { activated } = req.body;
