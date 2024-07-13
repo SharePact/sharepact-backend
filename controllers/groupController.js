@@ -23,7 +23,7 @@ const generateGroupCode = () => {
 exports.createGroup = async (req, res) => {
   try {
     const { subscriptionService, groupName, subscriptionPlan, numberOfMembers, 
-      accessType, username, password } = req.body;
+      accessType } = req.body;
     
     const { uid } = req.user; // Assuming you have 'uid' from authenticated user
     const user = await UserModel.findOne({ uid })
@@ -32,10 +32,6 @@ exports.createGroup = async (req, res) => {
 
     if(existingGroup) 
       throw new NotAuthorizedError("you have already created a group with similar service")
-
-    if (accessType === 'login' && (!username || !password)) {
-      return res.status(400).json({ error: 'Username and password are required for login access' });
-    }
 
     // Fetch service details for subscription cost and handling fees
     const serviceRef = firestore.collection('services').doc(subscriptionService);
@@ -306,10 +302,7 @@ exports.editGroupDetails = async (req, res) => {
   if(groupAdmin.uid !== req.user.uid) 
     throw new NotAuthorizedError("only the group admin can edit this group")
   
-  let { username, password, activated } = req.body;
-
-  if((username || password) && activated !== undefined) 
-    throw new BadRequestError("perform only one edit action (username or password edit) or set group as activated.");
+  let { activated } = req.body;
 
   if(group.activated && activated !== undefined) throw new BadRequestError("group has already been activated")
   
@@ -336,23 +329,6 @@ exports.editGroupDetails = async (req, res) => {
       status: "success", 
       message: "Successfully activated group. Invoices have been sent to all members"
     });
-  }
-
-  let changedLoginDetails = false;
-  if(username && username !== group.username){
-    changedLoginDetails = true;
-    group.username = username;
-  }
-
-  if(password && password !== group.password){
-    changedLoginDetails = true;
-    group.password = password;
-  }
-
-  if(changedLoginDetails){
-    await group.save()
-    // reset members password views
-    await GroupMembershipModel.updateMany({ group: group._id }, { $set: { passwordViews: 2 }});
   }
 
   return res.json({ message: "Successfully updated group details." })

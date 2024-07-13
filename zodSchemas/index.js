@@ -42,8 +42,5 @@ exports.processJoinRequestSchema = z.object({
 })
 
 exports.editGroupSchema = z.object({
-    username: string().optional(),
-    password: string().optional(),
-    groupName: string().optional(),
     activated: boolean().default(false)
 })
