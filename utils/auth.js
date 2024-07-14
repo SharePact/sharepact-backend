@@ -1,7 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
 const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator');
 
+// Generate a random username
 const generateRandomUsername = () => {
   return uniqueNamesGenerator({
     dictionaries: [adjectives, colors, animals],
@@ -10,17 +12,30 @@ const generateRandomUsername = () => {
   });
 };
 
+// Hash password
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
 
+// Compare password
 const comparePassword = async (password, hashedPassword) => {
   return bcrypt.compare(password, hashedPassword);
 };
 
+// Generate token
 const generateToken = (user) => {
-  return jwt.sign({ uid: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+};
+
+// Verify token
+const verifyToken = async (token) => {
+  try {
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    return decoded;
+  } catch (error) {
+    throw new Error('Invalid token');
+  }
 };
 
 module.exports = {
@@ -28,4 +43,5 @@ module.exports = {
   hashPassword,
   comparePassword,
   generateToken,
+  verifyToken
 };

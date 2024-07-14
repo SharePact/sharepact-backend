@@ -1,4 +1,4 @@
-const UserModel = require('../models/user'); 
+const UserModel = require('../models/user');
 const { generateRandomUsername, hashPassword, comparePassword, generateToken } = require('../utils/auth');
 
 // Predefined avatar URLs (example)
@@ -12,7 +12,6 @@ const avatarUrls = [
   'https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar7.png',
   'https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar8.png',
   'https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar9.png',
-
   // Add more URLs as needed
 ];
 
@@ -22,6 +21,11 @@ exports.signupWithEmail = async (req, res) => {
   const randomUsername = generateRandomUsername();
 
   try {
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already exists. Please use a different email address.' });
+    }
+
     const hashedPassword = await hashPassword(password); // Hash the password
 
     // Assign a random avatar URL
@@ -32,6 +36,8 @@ exports.signupWithEmail = async (req, res) => {
       password: hashedPassword, // Store hashed password
       username: randomUsername,
       avatarUrl, // Assign avatar URL
+      verified: false, // Optional: default value for email verification
+      role: 'user', // Optional: default user role
     });
 
     await newUser.save();
@@ -42,10 +48,8 @@ exports.signupWithEmail = async (req, res) => {
 
     res.status(201).json({ message: 'User signed up successfully', user: userWithoutPassword });
   } catch (error) {
-    if (error.code === 11000 && error.keyPattern && error.keyPattern.email) {
-      return res.status(400).json({ error: 'Email already exists. Please use a different email address.' });
-    }
-    res.status(400).json({ error: error.message });
+    console.error('Error during sign up:', error);
+    res.status(500).json({ error: 'An error occurred during sign up. Please try again.' });
   }
 };
 
@@ -79,6 +83,6 @@ exports.signinWithEmail = async (req, res) => {
 
   } catch (error) {
     console.error('Error during sign in:', error);
-    res.status(400).json({ error: 'An error occurred during sign in. Please try again.' });
+    res.status500.json({ error: 'An error occurred during sign in. Please try again.' });
   }
 };

@@ -17,7 +17,6 @@ exports.errorHandler = (
   }
 
   if (err instanceof CustomError) {
-    console.log("Custom error", err);
     return res.status(err.statusCode).send(err.serializeErrors());
   }
 

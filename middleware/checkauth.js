@@ -1,23 +1,29 @@
 const jwt = require('jsonwebtoken');
+const UserModel = require('../models/user');
+const { verifyToken } = require('../utils/auth');
 
-const checkAuth = (req, res, next) => {
-  // Get token from Authorization header
+const checkAuth = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1]; // Bearer <token>
 
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
 
-  // Verify JWT token
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.error('JWT verification error:', err);
-      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  try {
+    const decoded = await verifyToken(token);
+
+
+    const user = await UserModel.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
-    // Attach decoded user information to request object
-    req.user = decoded;
-    next(); // Call next middleware or route handler
-  });
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
 };
 
 module.exports = checkAuth;
