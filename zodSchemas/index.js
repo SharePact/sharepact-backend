@@ -1,5 +1,4 @@
-const { string, number, array, z, boolean } = require('zod');
-const service = require('../models/service');
+const { string, number, array, z } = require('zod');
 
 exports.createUserSchema = z.object({
     email: string({ required_error: "email is required" }).email(),
@@ -11,9 +10,6 @@ exports.createGroupSchema = z.object({
     groupName: string({ required_error: "group name is required" }),
     subscriptionPlan: string({ required_error: "subscription plan is required" }),
     numberOfMembers: number({ required_error: "number of members is required" }),
-    accessType: z.enum(["login", "invite"], { required_error: "provide a valid access type" }),
-    username: string().optional(),
-    password: string().optional(),
 }).strict();
 
 exports.subscriptionPlanSchema = z.object({
@@ -33,19 +29,7 @@ exports.createServiceSchema = z.object({
 
 exports.sendJoinRequestSchema = z.object({
     groupCode: string({ required_error: "group id is required" }),
-    serviceId: string({ required_error: "service is required" }),
-    message: string().optional(),
+    // serviceId: string({ required_error: "service is required" }),
+    message: string({ required_error: "group id is required" }),
 }).strict();
 
-exports.processJoinRequestSchema = z.object({
-    action: z.enum(["accept", "reject"], { required_error: "accept or reject this request" })
-})
-
-exports.editGroupSchema = z.object({
-    activated: boolean().default(false)
-})
-
-
-exports.confirmMemberReadySchema = z.object({
-    ready: boolean().default(false)
-})
