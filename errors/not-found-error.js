@@ -13,9 +13,9 @@ exports.NotFoundError = class NotFoundError extends CustomError {
 
   serializeErrors() {
     return {
-        message: this.message,
-        status: false,
-        code: this.statusCode,
+      message: this.message,
+      status: false,
+      code: this.statusCode,
     };
   }
-}
+};
