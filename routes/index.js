@@ -25,6 +25,7 @@ class Router {
     this.router.use("/", async (req, res) => {
       res.status(200).json({ message: "Welcome to SharePact Api" });
     });
+    // TODO: add api version
   }
 
   getRouter() {
