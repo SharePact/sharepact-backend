@@ -7,9 +7,7 @@ exports.ZodMiddleware = (schema) => async (req, res, next) => {
     await schema.parseAsync(req.body);
     return next();
   } catch (error) {
-    const zErr = error;
-
-    const validationError = new RequestValidationError(zErr).serializeErrors();
+    const validationError = new RequestValidationError(error).serializeErrors();
     res.status(validationError.code).json({ ...validationError });
   }
 };
