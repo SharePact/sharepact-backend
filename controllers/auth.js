@@ -1,4 +1,5 @@
 const UserModel = require("../models/user");
+const { BuildHttpResponse } = require("../utils/response");
 const {
   generateRandomUsername,
   hashPassword,
@@ -28,9 +29,11 @@ exports.signupWithEmail = async (req, res) => {
   try {
     const existingUser = await UserModel.findByEmail(email);
     if (existingUser) {
-      return res.status(400).json({
-        error: "Email already exists. Please use a different email address.",
-      });
+      return BuildHttpResponse(
+        res,
+        400,
+        "Email already exists. Please use a different email address."
+      );
     }
 
     const hashedPassword = await hashPassword(password); // Hash the password
@@ -47,15 +50,9 @@ exports.signupWithEmail = async (req, res) => {
       role: "user", // Optional: default user role
     });
 
-    res.status(201).json({
-      message: "User signed up successfully",
-      user: newUser,
-    });
+    return BuildHttpResponse(res, 201, "User signed up successfully", newUser);
   } catch (error) {
-    console.error("Error during sign up:", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred during sign up. Please try again." });
+    return BuildHttpResponse(res, 500, error.message);
   }
 };
 
@@ -66,12 +63,12 @@ exports.signinWithEmail = async (req, res) => {
   try {
     const user = await UserModel.findByEmail(email);
     if (!user) {
-      return res.status(400).json({ error: "No user found with this email." });
+      return BuildHttpResponse(res, 400, "Incorrect email or password");
     }
 
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ error: "Incorrect password." });
+      return BuildHttpResponse(res, 400, "Incorrect email or password");
     }
 
     // Generate token
@@ -80,15 +77,11 @@ exports.signinWithEmail = async (req, res) => {
     // Remove sensitive fields from user object before sending in response
     const userWithoutSensitiveInfo = user.toJSON();
 
-    res.status(200).json({
-      message: "User signed in successfully",
+    return BuildHttpResponse(res, 200, "User signed in successfully", {
       user: userWithoutSensitiveInfo,
-      token: token,
+      token,
     });
   } catch (error) {
-    console.error("Error during sign in:", error);
-    res.status500.json({
-      error: "An error occurred during sign in. Please try again.",
-    });
+    return BuildHttpResponse(res, 500, error.message);
   }
 };

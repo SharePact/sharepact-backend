@@ -18,9 +18,7 @@ const getPaginatedResults = async (
 
     return {
       results,
-      totalItems,
-      totalPages,
-      currentPage: page,
+      pagination: { totalItems, totalPages, currentPage: page },
     };
   } catch (err) {
     console.error(err);

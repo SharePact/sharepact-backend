@@ -1,72 +1,83 @@
-const Category = require('../models/category');
-const cloudinary = require('../config/cloudinary');
+const Category = require("../models/category");
+const cloudinary = require("../config/cloudinary");
+const { BuildHttpResponse } = require("../utils/response");
+const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 
 exports.createCategory = async (req, res) => {
   try {
     let result;
     if (req.file) {
-      result = await cloudinary.uploader.upload(req.file.path);
+      result = await uploadBufferToCloudinary(req.file.buffer);
     }
-    
-    const category = new Category({
+
+    const category = await Category.createCategory({
       categoryName: req.body.categoryName,
-      imageUrl: result ? result.secure_url : '',
+      imageUrl: result ? result.secure_url : "",
     });
 
-    await category.save();
-    res.status(201).json(category);
+    return BuildHttpResponse(
+      res,
+      201,
+      "category created successfully",
+      category
+    );
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return BuildHttpResponse(res, 500, err.message);
   }
 };
 
 exports.getAllCategories = async (req, res) => {
+  const { page, limit } = req.pagination;
   try {
-    const categories = await Category.find();
-    res.status(200).json(categories);
+    const categories = await Category.getCategories(page, limit);
+    return BuildHttpResponse(
+      res,
+      200,
+      "successful",
+      categories.results,
+      categories.pagination
+    );
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return BuildHttpResponse(res, 500, err.message);
   }
 };
 
 exports.getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
-    res.status(200).json(category);
+    if (!category)
+      return BuildHttpResponse(res, 404, "Category not found", category);
+    return BuildHttpResponse(res, 200, "successful", category);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return BuildHttpResponse(res, 500, err.message);
   }
 };
 
 exports.updateCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!category) return BuildHttpResponse(res, 404, "Category not found");
 
-    if (req.body.categoryName) category.categoryName = req.body.categoryName;
-
+    let imageUrl = "";
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      category.imageUrl = result.secure_url;
+      const result = await uploadBufferToCloudinary(req.file.buffer);
+      imageUrl = result.secure_url;
     }
+    category.updateCategory({ categoryName: req.body.categoryName, imageUrl });
 
-    category.updatedAt = Date.now();
-    await category.save();
-
-    res.status(200).json(category);
+    return BuildHttpResponse(res, 200, "successful", category);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return BuildHttpResponse(res, 500, err.message);
   }
 };
 
 exports.deleteCategory = async (req, res) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!category) return BuildHttpResponse(res, 404, "Category not found");
 
-    res.status(200).json({ message: 'Category deleted successfully' });
+    return BuildHttpResponse(res, 200, "Category deleted successfully");
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return BuildHttpResponse(res, 500, err.message);
   }
 };
