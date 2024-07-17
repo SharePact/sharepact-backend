@@ -6,6 +6,8 @@ const profileRoutes = require("./profile");
 const bankDetailsRoutes = require("./bankdetails");
 const groupRoutes = require("./group");
 const chatRoutes = require("./chat");
+const { base } = require("../models/user");
+const getPaginationParams = require("../middleware/paginationParams");
 
 class Router {
   constructor() {
@@ -14,17 +16,21 @@ class Router {
   }
 
   initializeRoutes() {
-    this.router.use("/auth", authRoutes);
-    this.router.use("/api/categories", categoryRoutes);
-    this.router.use("/api/services", serviceRoutes);
-    this.router.use("/api/profile", profileRoutes);
-    this.router.use("/api", bankDetailsRoutes);
-    this.router.use("/api/groups", groupRoutes);
-    this.router.use("/api/chat", chatRoutes);
+    const baseRouter = express.Router();
+    baseRouter.use("/auth", authRoutes);
+    baseRouter.use("/api/categories", categoryRoutes);
+    baseRouter.use("/api/services", serviceRoutes);
+    baseRouter.use("/api/profile", profileRoutes);
+    baseRouter.use("/api", bankDetailsRoutes);
+    baseRouter.use("/api/groups", groupRoutes);
+    baseRouter.use("/api/chat", chatRoutes);
 
-    this.router.use("/", async (req, res) => {
+    baseRouter.use("/", async (req, res) => {
       res.status(200).json({ message: "Welcome to SharePact Api" });
     });
+
+    this.router.use("/", getPaginationParams, baseRouter);
+    // TODO: add api version
   }
 
   getRouter() {
