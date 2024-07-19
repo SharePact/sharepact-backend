@@ -53,3 +53,21 @@ exports.sendJoinRequestSchema = z
     message: string({ required_error: "group id is required" }),
   })
   .strict();
+
+exports.addBankDetailsSchema = z
+  .object({
+    accountName: string({ required_error: "account name is required" }),
+    bankName: string({ required_error: "bank name is required" }),
+    accountNumber: string({ required_error: "account number is required" }),
+    sortCode: string({ required_error: "bank sort code is required" }),
+  })
+  .strict();
+
+exports.updateBankDetailsSchema = z
+  .object({
+    accountName: string().optional(),
+    bankName: string().optional(),
+    accountNumber: string().optional(),
+    sortCode: string().optional(),
+  })
+  .strict();
