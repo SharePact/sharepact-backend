@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 const { writeOnlyPlugin } = require("../utils/mongoose-plugins");
+const { hashPassword } = require("../utils/auth");
 const modelName = "User";
 
 const UserSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, unique: true },
     username: { type: String, required: true },
     avatarUrl: { type: String, required: true },
     verified: { type: Boolean, default: false },
@@ -14,9 +15,20 @@ const UserSchema = new mongoose.Schema(
     updatedAt: { type: Date, default: Date.now },
   },
   {
+    methods: {
+      async updatePassword(newPassword) {
+        const hashedNewPassword = await hashPassword(newPassword);
+        this.password = hashedNewPassword;
+        await this.save();
+        return this;
+      },
+    },
     statics: {
       findByEmail(email) {
         return this.findOne({ email });
+      },
+      findByUsername(username) {
+        return this.findOne({ username });
       },
       async createUser({
         email,

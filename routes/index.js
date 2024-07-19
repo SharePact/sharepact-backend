@@ -9,6 +9,7 @@ const chatRoutes = require("./chat");
 const { base } = require("../models/user");
 const getPaginationParams = require("../middleware/paginationParams");
 const { BuildHttpResponse } = require("../utils/response");
+const { comprehensiveLogger, requestLogger } = require("../middleware/logger");
 
 class Router {
   constructor() {
@@ -29,7 +30,7 @@ class Router {
     baseRouter.use("/api/groups", groupRoutes);
     baseRouter.use("/api/chat", chatRoutes);
 
-    this.router.use("/", getPaginationParams, baseRouter);
+    this.router.use("/", requestLogger, getPaginationParams, baseRouter);
     this.router.use((req, res, next) => {
       return BuildHttpResponse(
         res,
