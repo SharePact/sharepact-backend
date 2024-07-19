@@ -8,6 +8,7 @@ const groupRoutes = require("./group");
 const chatRoutes = require("./chat");
 const { base } = require("../models/user");
 const getPaginationParams = require("../middleware/paginationParams");
+const { BuildHttpResponse } = require("../utils/response");
 
 class Router {
   constructor() {
@@ -17,6 +18,9 @@ class Router {
 
   initializeRoutes() {
     const baseRouter = express.Router();
+    baseRouter.get("/", async (req, res) => {
+      res.status(200).json({ message: "Welcome to SharePact Api" });
+    });
     baseRouter.use("/auth", authRoutes);
     baseRouter.use("/api/categories", categoryRoutes);
     baseRouter.use("/api/services", serviceRoutes);
@@ -25,11 +29,14 @@ class Router {
     baseRouter.use("/api/groups", groupRoutes);
     baseRouter.use("/api/chat", chatRoutes);
 
-    baseRouter.use("/", async (req, res) => {
-      res.status(200).json({ message: "Welcome to SharePact Api" });
-    });
-
     this.router.use("/", getPaginationParams, baseRouter);
+    this.router.use((req, res, next) => {
+      return BuildHttpResponse(
+        res,
+        404,
+        "Ohh you are lost, read the API documentation to find your way back home :)"
+      );
+    });
     // TODO: add api version
   }
 

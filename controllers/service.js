@@ -2,6 +2,7 @@ const Service = require("../models/service");
 const Category = require("../models/category");
 const uploadFileToStorage = require("../utils/uploadfiletostorage");
 const { v4: uuidv4 } = require("uuid");
+const { BuildHttpResponse } = require("../utils/response");
 
 exports.createService = async (req, res) => {
   try {
@@ -21,12 +22,12 @@ exports.createService = async (req, res) => {
       !currency ||
       !categoryId
     ) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return BuildHttpResponse(res, 400, "Missing required fields");
     }
 
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(404).json({ error: "Category not found" });
+      return BuildHttpResponse(res, 404, "Category not found");
     }
 
     const logoFile = req.file;
@@ -41,43 +42,39 @@ exports.createService = async (req, res) => {
       );
     }
 
-    const serviceData = {
+    const service = await Service.createService({
       serviceName,
       serviceDescription,
-      subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
+      subscriptionPlans,
       currency,
       handlingFees,
       logoUrl,
       categoryId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    });
 
-    const service = new Service(serviceData);
-    await service.save();
-
-    res.status(201).json({
-      message: "Service created successfully",
+    return BuildHttpResponse(res, 201, "Service created successfully", {
       id: service._id,
       categoryName: category.categoryName, // Include category name in the response
-      ...serviceData,
+      ...service.toJSON(),
     });
   } catch (error) {
-    console.error("Error creating service:", error);
-    res.status(500).json({ error: error.message });
+    return BuildHttpResponse(res, 500, error.message);
   }
 };
 
 exports.getServices = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    const services = await Service.find();
-    res
-      .status(200)
-      .json({ message: "Services fetched successfully", services });
+    const services = await Service.getServices(page, limit);
+    return BuildHttpResponse(
+      res,
+      200,
+      "Services fetched successfully",
+      services.results,
+      services.pagination
+    );
   } catch (error) {
-    console.error("Error fetching services:", error);
-    res.status(500).json({ error: error.message });
+    return BuildHttpResponse(res, 500, error.message);
   }
 };
 
@@ -86,16 +83,15 @@ exports.getServiceById = async (req, res) => {
     const { id } = req.params;
     const service = await Service.findById(id);
     if (!service) {
-      return res.status(404).json({ error: "Service not found" });
+      return BuildHttpResponse(res, 404, "Service not found");
     }
 
     const category = await Category.findById(service.categoryId);
     if (!category) {
-      return res.status(404).json({ error: "Category not found" });
+      return BuildHttpResponse(res, 404, "Category not found");
     }
 
-    res.status(200).json({
-      message: "Service fetched successfully",
+    return BuildHttpResponse(res, 200, "Service fetched successfully", {
       id: service._id,
       categoryName: category.categoryName, // Include category name in the response
       ...service._doc,
@@ -118,51 +114,44 @@ exports.updateService = async (req, res) => {
       categoryId,
     } = req.body;
 
-    if (
-      !serviceName ||
-      !serviceDescription ||
-      !subscriptionPlans ||
-      !currency ||
-      !categoryId
-    ) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const service = await Service.findById(id);
+    if (!service) {
+      return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    const serviceData = {
-      serviceName,
-      serviceDescription,
-      subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
-      currency,
-      handlingFees,
-      categoryId,
-      updatedAt: new Date(),
-    };
-
+    let logoUrl = null;
     if (req.file) {
       const logoFile = req.file;
       const logoFileName = `${uuidv4()}_${logoFile.originalname}`;
-      serviceData.logoUrl = await uploadFileToStorage(
+      logoUrl = await uploadFileToStorage(
         logoFile.buffer,
         logoFileName,
         logoFile.mimetype
       );
     }
 
-    const updatedService = await Service.findByIdAndUpdate(id, serviceData, {
-      new: true,
+    await service.updateService({
+      serviceName,
+      serviceDescription,
+      subscriptionPlans,
+      currency,
+      handlingFees,
+      categoryId,
+      logoUrl,
     });
-    if (!updatedService) {
-      return res.status(404).json({ error: "Service not found" });
+
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return BuildHttpResponse(res, 404, "Category not found");
     }
 
-    res.status(200).json({
-      message: "Service updated successfully",
-      id,
-      ...updatedService._doc,
+    return BuildHttpResponse(res, 200, "Service updated successfully", {
+      id: service._id,
+      categoryName: category.categoryName, // Include category name in the response
+      ...service.toJSON(),
     });
   } catch (error) {
-    console.error("Error updating service:", error);
-    res.status(500).json({ error: error.message });
+    return BuildHttpResponse(res, 500, error.message);
   }
 };
 
@@ -171,11 +160,10 @@ exports.deleteService = async (req, res) => {
     const { id } = req.params;
     const deletedService = await Service.findByIdAndDelete(id);
     if (!deletedService) {
-      return res.status(404).json({ error: "Service not found" });
+      return BuildHttpResponse(res, 404, "Service not found");
     }
-    res.status(200).json({ message: "Service deleted successfully" });
+    return BuildHttpResponse(res, 200, "Service deleted successfully");
   } catch (error) {
-    console.error("Error deleting service:", error);
-    res.status(500).json({ error: error.message });
+    return BuildHttpResponse(res, 500, err.message);
   }
 };
