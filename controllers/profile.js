@@ -1,5 +1,6 @@
-const UserModel = require('../models/user');
+const User = require('../models/user');
 const { hashPassword, comparePassword } = require('../utils/auth');
+const { BuildHttpResponse } = require('../utils/response');
 
 // Predefined avatar URLs
 const avatarUrls = [
@@ -17,7 +18,7 @@ const avatarUrls = [
 
 // Get all available avatars
 exports.getAllAvatars = (req, res) => {
-  res.status(200).json({ avatars: avatarUrls });
+  return BuildHttpResponse(res, 200, "Avatars retrieved successfully", { avatars: avatarUrls });
 };
 
 // Update user's avatar
@@ -25,20 +26,20 @@ exports.updateAvatar = async (req, res) => {
   const { userId, avatarUrl } = req.body;
 
   if (!userId || !avatarUrl) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return BuildHttpResponse(res, 400, "Missing required fields");
   }
 
   try {
-    const user = await UserModel.findOneAndUpdate({ userId }, { avatarUrl }, { new: true });
+    const user = await User.findOneAndUpdate({ _id: userId }, { avatarUrl }, { new: true });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return BuildHttpResponse(res, 404, "User not found");
     }
 
-    res.status(200).json({ message: 'Avatar updated successfully', avatarUrl: user.avatarUrl });
+    return BuildHttpResponse(res, 200, "Avatar updated successfully", { avatarUrl: user.avatarUrl });
   } catch (error) {
     console.error('Error updating avatar:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return BuildHttpResponse(res, 500, "Internal server error");
   }
 };
 
@@ -47,20 +48,23 @@ exports.updateUsername = async (req, res) => {
   const { userId, username } = req.body;
 
   if (!userId || !username) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return BuildHttpResponse(res, 400, "Missing required fields");
   }
 
   try {
-    const user = await UserModel.findOneAndUpdate({ userId }, { username }, { new: true });
+    const user = await User.findOneAndUpdate({ _id: userId }, { username }, { new: true });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return BuildHttpResponse(res, 404, "User not found");
     }
 
-    res.status(200).json({ message: 'Username updated successfully', username: user.username });
+    return BuildHttpResponse(res, 200, "Username updated successfully", { username: user.username });
   } catch (error) {
+    if (error.code === 11000) {
+      return BuildHttpResponse(res, 400, "Username already exists");
+    }
     console.error('Error updating username:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return BuildHttpResponse(res, 500, "Internal server error");
   }
 };
 
@@ -69,27 +73,27 @@ exports.changePassword = async (req, res) => {
   const { userId, currentPassword, newPassword } = req.body;
 
   if (!userId || !currentPassword || !newPassword) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return BuildHttpResponse(res, 400, "Missing required fields");
   }
 
   try {
-    const user = await UserModel.findOne({ userId });
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return BuildHttpResponse(res, 404, "User not found");
     }
 
     const isPasswordValid = await comparePassword(currentPassword, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ error: 'Incorrect current password.' });
+      return BuildHttpResponse(res, 400, "Incorrect current password.");
     }
 
     const hashedNewPassword = await hashPassword(newPassword);
     user.password = hashedNewPassword;
     await user.save();
 
-    res.status(200).json({ message: 'Password changed successfully' });
+    return BuildHttpResponse(res, 200, "Password changed successfully");
   } catch (error) {
     console.error('Error changing password:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return BuildHttpResponse(res, 500, "Internal server error");
   }
 };

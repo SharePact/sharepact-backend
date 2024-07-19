@@ -1,50 +1,82 @@
 const BankDetails = require('../models/bankdetails');
+const { BuildHttpResponse } = require('../utils/response');
 
-// Add bank details
 exports.addBankDetails = async (req, res) => {
-  const { userId, accountName, bankName, accountNumber } = req.body;
-
-  if (!userId || !accountName || !bankName || !accountNumber) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
   try {
-    const existingBankDetails = await BankDetails.findOne({ userId });
+    const { userId, accountName, bankName, accountNumber } = req.body;
 
-    if (existingBankDetails) {
-      return res.status(400).json({ error: 'Bank details already exist for this user.' });
+    if (!userId || !accountName || !bankName || !accountNumber) {
+      return BuildHttpResponse(res, 400, "Missing required fields");
     }
 
-    const bankDetails = new BankDetails({
-      userId,
+    const existingBankDetails = await BankDetails.findOne({ user: userId });
+
+    if (existingBankDetails) {
+      return BuildHttpResponse(res, 400, "Bank details already exist for this user");
+    }
+
+    const bankDetails = await BankDetails.createBankDetails({
+      user: userId,
       accountName,
       bankName,
       accountNumber,
     });
 
-    await bankDetails.save();
-
-    res.status(201).json({ message: 'Bank details added successfully', bankDetails });
+    return BuildHttpResponse(res, 201, "Bank details added successfully", bankDetails);
   } catch (error) {
     console.error('Error adding bank details:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return BuildHttpResponse(res, 500, "Internal server error");
   }
 };
 
-// Get bank details for user
 exports.getBankDetails = async (req, res) => {
-  const { userId } = req.params;
-
   try {
-    const bankDetails = await BankDetails.findOne({ userId });
+    const { userId } = req.params;
+    const bankDetails = await BankDetails.getBankDetailsByUser(userId);
 
     if (!bankDetails) {
-      return res.status(404).json({ error: 'Bank details not found' });
+      return BuildHttpResponse(res, 404, "Bank details not found");
     }
 
-    res.status(200).json({ bankDetails });
+    return BuildHttpResponse(res, 200, "Bank details retrieved successfully", bankDetails);
   } catch (error) {
     console.error('Error fetching bank details:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return BuildHttpResponse(res, 500, "Internal server error");
   }
 };
+
+// exports.updateBankDetails = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const { accountName, bankName, accountNumber } = req.body;
+
+//     const bankDetails = await BankDetails.findOne({ user: userId });
+
+//     if (!bankDetails) {
+//       return BuildHttpResponse(res, 404, "Bank details not found");
+//     }
+
+//     await bankDetails.updateBankDetails({ accountName, bankName, accountNumber });
+
+//     return BuildHttpResponse(res, 200, "Bank details updated successfully", bankDetails);
+//   } catch (error) {
+//     console.error('Error updating bank details:', error);
+//     return BuildHttpResponse(res, 500, "Internal server error");
+//   }
+// };
+
+// exports.deleteBankDetails = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const bankDetails = await BankDetails.findOneAndDelete({ user: userId });
+
+//     if (!bankDetails) {
+//       return BuildHttpResponse(res, 404, "Bank details not found");
+//     }
+
+//     return BuildHttpResponse(res, 200, "Bank details deleted successfully");
+//   } catch (error) {
+//     console.error('Error deleting bank details:', error);
+//     return BuildHttpResponse(res, 500, "Internal server error");
+//   }
+// };
