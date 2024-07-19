@@ -1,7 +1,6 @@
 // models/category.js
 const mongoose = require("mongoose");
 const { getPaginatedResults } = require("../utils/pagination");
-const { updateCategory } = require("../controllers/category");
 const modelName = "Category";
 const CategorySchema = new mongoose.Schema(
   {
