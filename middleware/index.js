@@ -1,9 +1,12 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const Messaging = require("../routes/socket.io");
 
 class Server {
   constructor(baseRouter) {
     this.app = express();
+    // const messagingServer = new Messaging(this.app);
     this.baseRouter = baseRouter;
     this.initializeMiddleWares();
   }
@@ -12,6 +15,7 @@ class Server {
     this.app.use(express.json());
     this.app.use(cors());
     this.app.use(this.baseRouter.getRouter());
+    this.app.use(express.static(path.join(__dirname, "../public")));
 
     // default 500 error response
     this.app.use((err, req, res, next) => {
@@ -22,9 +26,10 @@ class Server {
 
   startListening() {
     const PORT = process.env.PORT || 5001;
-    this.app.listen(PORT, () => {
+    const server = this.app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
+    const messagingServer = new Messaging(server);
   }
 
   getApp() {

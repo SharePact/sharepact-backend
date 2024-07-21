@@ -1,6 +1,6 @@
 const express = require("express");
 const GroupController = require("../controllers/group");
-const authenticateUser = require("../middleware/checkAuth");
+const { checkAuth } = require("../middleware/checkauth");
 const { createGroupSchema } = require("../zodSchemas/index");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 
@@ -8,32 +8,28 @@ const router = express.Router();
 
 router.post(
   "/create",
-  authenticateUser,
+  checkAuth,
   ZodMiddleware(createGroupSchema),
   GroupController.createGroup
 );
 router.get(
   "/by-service/:service_id",
-  authenticateUser,
+  checkAuth,
   GroupController.getGroupsByServiceId
 );
-router.get("/", authenticateUser, GroupController.getGroups);
-router.post("/join", authenticateUser, GroupController.requestToJoinGroup);
+router.get("/", checkAuth, GroupController.getGroups);
+router.post("/join", checkAuth, GroupController.requestToJoinGroup);
 router.post(
   "/handle-join-request",
-  authenticateUser,
+  checkAuth,
   GroupController.handleJoinRequest
 );
 router.get(
   "/join-requests/:groupId",
-  authenticateUser,
+  checkAuth,
   GroupController.getJoinRequests
 );
-router.get("/:groupId", authenticateUser, GroupController.getGroupDetails);
-router.post(
-  "/activate/:groupId",
-  authenticateUser,
-  GroupController.activateGroup
-);
-router.delete("/:id", authenticateUser, GroupController.deleteGroup);
+router.get("/:groupId", checkAuth, GroupController.getGroupDetails);
+router.post("/activate/:groupId", checkAuth, GroupController.activateGroup);
+router.delete("/:id", checkAuth, GroupController.deleteGroup);
 module.exports = router;
