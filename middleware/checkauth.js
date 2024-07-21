@@ -10,6 +10,15 @@ const checkAuth = async (req, res, next) => {
     return res.status(401).json({ error: "Unauthorized: No token provided" });
   }
 
+  const resp = await getUserFromToken(token);
+  if (resp.error)
+    return res.status(resp.error.code).json({ error: resp.error.message });
+
+  req.user = resp.user;
+  next();
+};
+
+const getUserFromToken = async (token) => {
   /**
    * @type {jwt.SigningKeyCallback}
    */
@@ -19,21 +28,36 @@ const checkAuth = async (req, res, next) => {
     decoded = await verifyToken(token);
   } catch (error) {
     const ntError = new NotAuthorizedError(error).serializeErrors();
-    return res.status(ntError.code).json({ ...ntError });
+    return { error: ntError, user: null };
   }
 
   try {
     const user = await UserModel.findById(decoded.userId);
     if (!user) {
-      return res.status(401).json({ error: "Unauthorized: User not found" });
+      return {
+        error: {
+          message: "Unauthorized: User not found",
+          code: 401,
+          status: false,
+        },
+        user: null,
+      };
     }
 
-    req.user = user;
-    next();
+    return {
+      error: null,
+      user: user,
+    };
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    return {
+      error: {
+        message: error.message,
+        code: 500,
+        status: false,
+      },
+      user: null,
+    };
   }
 };
 
-module.exports = checkAuth;
+module.exports = { checkAuth, getUserFromToken };

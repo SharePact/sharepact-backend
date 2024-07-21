@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema(
     },
     statics: {
       findByEmail(email) {
-        return this.findOne({ email });
+        return this.findOne({ email: email.toString() });
       },
       findByUsername(username) {
         return this.findOne({ username });

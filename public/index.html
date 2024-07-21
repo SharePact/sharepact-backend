@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Group Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      li {
+        padding: 8px;
+        margin-bottom: 10px;
+        background-color: #f4f4f4;
+      }
+      #messages {
+        height: 300px;
+        overflow-y: scroll;
+      }
+      #roomForm {
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 id="userInfo" style="text-align: center"></h2>
+    <div id="groupListContainer" style="display: none">
+      <h3>Groups</h3>
+      <h5>Join Group Chat</h5>
+      <ol id="groupList"></ol>
+    </div>
+    <form id="loginForm">
+      <input id="email" type="email" required placeholder="Enter email" />
+      <br />
+      <input
+        id="password"
+        type="password"
+        required
+        placeholder="Enter password"
+        autocomplete="off"
+      />
+      <br />
+      <button type="submit">Login</button>
+    </form>
+    <form id="roomForm" style="display: none">
+      <input id="roomInput" placeholder="Enter room ID" autocomplete="off" />
+      <button type="submit">Join Room</button>
+    </form>
+    <ul id="messages"></ul>
+    <form id="messageForm" style="display: none">
+      <input id="messageInput" autocomplete="off" />
+      <button>Send</button>
+    </form>
+
+    <script src="./socket.js" type="module"></script>
+    <script src="./main.js" type="module"></script>
+    <script
+      src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+      integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
