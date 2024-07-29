@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const UserModel = require("../models/user");
 const { NotAuthorizedError } = require("../errors/not-authorized-error");
-const { verifyToken } = require("../utils/auth");
+const AuthTokenModel = require("../models/authToken");
 
 const checkAuth = async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
@@ -14,6 +14,7 @@ const checkAuth = async (req, res, next) => {
   if (resp.error)
     return res.status(resp.error.code).json({ error: resp.error.message });
 
+  req.authToken = token;
   req.user = resp.user;
   next();
 };
@@ -25,7 +26,7 @@ const getUserFromToken = async (token) => {
   let decoded;
 
   try {
-    decoded = await verifyToken(token);
+    decoded = await AuthTokenModel.verifyToken(token);
   } catch (error) {
     const ntError = new NotAuthorizedError(error).serializeErrors();
     return { error: ntError, user: null };

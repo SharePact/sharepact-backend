@@ -6,6 +6,9 @@ const pdf = require("html-pdf");
 const ejs = require("ejs");
 const path = require("path");
 const { BuildHttpResponse } = require("../utils/response");
+const { sendEmailWithBrevo } = require("../notification/brevo");
+const Paystack = require("../utils/paystack");
+const PaymentModel = require("../models/payment");
 
 const generateGroupCode = async () => {
   let code;
@@ -19,7 +22,37 @@ const generateGroupCode = async () => {
 
 const generateInvoice = async (group, user) => {
   const templatePath = path.join(__dirname, "../templates/invoice.ejs");
-  const html = await ejs.renderFile(templatePath, { group, user });
+  const cost = group.totalCost / (group.members?.length + 1);
+  const amount = group.handlingFee + cost;
+  const service = await ServiceModel.findById(group.service);
+
+  const resp = await Paystack.getUrl({
+    user_id: user._id,
+    email: user.email,
+    name: user.username,
+    transaction_reference: uuidv4(),
+    amount: amount,
+    currency: "NGN",
+    redirect_url: `${process.env?.APP_URL}/api/verify-payment`,
+  });
+
+  if (!resp.status) throw new Error("error generating payment link");
+  console.log("88888888888888888, succeded");
+
+  await PaymentModel.createPayment({
+    reference: resp.reference,
+    userId: user._id,
+    groupId: group._id,
+    amount,
+    currency: service.currency,
+  });
+  const html = await ejs.renderFile(templatePath, {
+    group,
+    user,
+    cost,
+    amount,
+    payment_link: resp.payment_link,
+  });
 
   const pdfOptions = { format: "Letter" };
   return new Promise((resolve, reject) => {
@@ -58,7 +91,7 @@ exports.activateGroup = async (req, res) => {
       return BuildHttpResponse(res, 400, "Group is already activated");
     }
 
-    group.activated = true;
+    // group.activated = true;
     group.nextSubscriptionDate = new Date(
       Date.now() + 30 * 24 * 60 * 60 * 1000
     ); // 30 days from now
@@ -67,27 +100,43 @@ exports.activateGroup = async (req, res) => {
     await group.save();
 
     // Generate invoices for all members including admin
+
     const invoices = await Promise.all(
       group.members.map(async (member) => {
         const user = member.user;
         const buffer = await generateInvoice(group, user);
+        console.log(11, user._id);
+        sendEmailWithBrevo({
+          subject: `${group.groupName} - ${group.planName} invoice`,
+          htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
+          to: [{ email: user.email }],
+          attachments: [{ name: "invoice.pdf", buffer: buffer }],
+        });
         return {
           user,
           buffer,
         };
       })
     );
-
+    console.log(22);
     // Also generate invoice for admin
     const adminBuffer = await generateInvoice(group, group.admin);
+    sendEmailWithBrevo({
+      subject: `${group.groupName} - ${group.planName} invoice`,
+      htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
+      to: [{ email: group.admin.email }],
+      attachments: [{ name: "invoice.pdf", buffer: adminBuffer }],
+    });
+    console.log(33, group.admin._id);
 
     // Send the invoices as a response for testing purposes
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=invoice-${group.groupCode}.pdf`
-    );
-    res.send(adminBuffer);
+    // res.setHeader("Content-Type", "application/pdf");
+    // res.setHeader(
+    //   "Content-Disposition",
+    //   `attachment; filename=invoice-${group.groupCode}.pdf`
+    // );
+    // res.send(adminBuffer);
+    return BuildHttpResponse(res, 200, "invoices sent");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -184,7 +233,9 @@ exports.getGroupsByServiceId = async (req, res) => {
   const { service_id } = req.params;
   const { page, limit } = req.pagination;
   try {
+    const userId = req.user._id;
     const groups = await GroupModel.getGroupsByServiceId(
+      userId,
       service_id,
       page,
       limit
@@ -204,7 +255,15 @@ exports.getGroupsByServiceId = async (req, res) => {
 exports.getGroups = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    const groups = await GroupModel.getGroups(page, limit);
+    let { search, active } = req.query;
+    const userId = req.user._id;
+    const groups = await GroupModel.getGroups(
+      userId,
+      page,
+      limit,
+      search ?? "",
+      active ?? null
+    );
     return BuildHttpResponse(
       res,
       200,
@@ -352,61 +411,37 @@ exports.getGroupDetails = async (req, res) => {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    const isMember = await group.isUserAMember(userId);
+    const groupDetails = await group.groupDetails(userId, service._id);
+    return BuildHttpResponse(res, 200, "successful", groupDetails);
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
 
-    const groupDetails = {
-      subscriptionService: group.subscriptionService,
-      serviceName: group.serviceName,
-      groupName: group.groupName,
-      subscriptionPlan: group.subscriptionPlan,
-      numberOfMembers: group.numberOfMembers,
-      subscriptionCost: group.subscriptionCost,
-      handlingFee: group.handlingFee,
-      individualShare: group.individualShare,
-      totalCost: group.totalCost,
-      admin: {
-        _id: group.admin._id,
-        username: group.admin.username,
-        avatarUrl: group.admin.avatarUrl,
-      },
-      memberCount: group.members.length,
-      createdAt: group.createdAt,
-      serviceLogo: service.logoUrl,
-      serviceDescription:
-        service.subscriptionPlans.find(
-          (plan) => plan.planName === group.planName
-        )?.description || [],
-      existingGroup: group.existingGroup,
-      activated: group.activated,
-      nextSubscriptionDate: group.nextSubscriptionDate, // Include nextSubscriptionDate in response
-      joinRequestCount: group.joinRequests.length, // Number of join requests
-    };
+exports.getGroupDetailsByCode = async (req, res) => {
+  try {
+    const { groupCode } = req.params;
+    const userId = req.user._id;
 
-    if (isMember) {
-      groupDetails.members = group.members.map((member) => ({
-        user: {
-          _id: member.user._id,
-          username: member.user.username,
-          avatarUrl: member.user.avatarUrl,
-        },
-        subscriptionStatus: member.subscriptionStatus,
-        confirmStatus: member.confirmStatus,
-      }));
-      groupDetails.groupCode = group.groupCode;
-      groupDetails.joinRequests =
-        group.admin._id.toString() === userId.toString()
-          ? group.joinRequests
-          : [];
-    } else {
-      groupDetails.members = group.members.map((member) => ({
-        user: {
-          _id: member.user._id,
-          username: member.user.username,
-          avatarUrl: member.user.avatarUrl,
-        },
-      }));
+    const groupByCode = await GroupModel.findbyGroupCode(groupCode);
+    if (!groupByCode) {
+      return BuildHttpResponse(res, 404, "Group not found");
     }
 
+    const group = await GroupModel.findById(groupByCode._id)
+      .populate("admin", "username avatarUrl")
+      .populate({
+        path: "members.user",
+        select: "username avatarUrl",
+      });
+
+    const service = await ServiceModel.findById(group.service);
+
+    if (!service) {
+      return BuildHttpResponse(res, 404, "Service not found");
+    }
+
+    const groupDetails = await group.groupDetails(userId, service._id);
     return BuildHttpResponse(res, 200, "successful", groupDetails);
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
@@ -448,6 +483,30 @@ exports.getJoinRequests = async (req, res) => {
       "retreived pending requests",
       group.joinRequests ?? []
     );
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.leaveGroup = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const group = await GroupModel.findById(groupId).populate(
+      "joinRequests.user",
+      "username avatarUrl"
+    );
+
+    if (!group) {
+      return BuildHttpResponse(res, 404, "Group not found");
+    }
+
+    if (group.admin.toString() == req.user._id.toString()) {
+      return BuildHttpResponse(res, 403, "admin cannot leave group");
+    }
+
+    await group.removeMember(req.user._id);
+
+    return BuildHttpResponse(res, 200, "successfully left group");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

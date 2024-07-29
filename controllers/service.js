@@ -65,7 +65,8 @@ exports.createService = async (req, res) => {
 exports.getServices = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    const services = await Service.getServices(page, limit);
+    let { category } = req.query;
+    const services = await Service.getServices(page, limit, category ?? null);
     return BuildHttpResponse(
       res,
       200,

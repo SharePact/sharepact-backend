@@ -4,10 +4,15 @@ const modelName = "BankDetails";
 
 const BankDetailsSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     accountName: { type: String, required: true },
     bankName: { type: String, required: true },
-    accountNumber: { type: String, required: true },
+    accountNumber: { type: String, required: true, index: true },
     sortCode: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

@@ -37,4 +37,6 @@ router.get(
   checkAuth,
   bankDetailsController.getBankDetails
 );
+
+router.get("/verify-payment", bankDetailsController.verifyPayment);
 module.exports = router;

@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentRoom = "";
   let groups = [];
   let userEmail = "";
+  let userId = "";
   let groupsPagination = { page: 0, limit: 20, next: true };
 
   const loginForm = document.getElementById("loginForm");
@@ -48,7 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         authToken = result?.data?.token;
         userEmail = result.data.user.email;
-        instantiateSocketIOAndDependencies(authToken, userEmail);
+        userId = result.data.user._id;
+        instantiateSocketIOAndDependencies(authToken, userEmail, userId);
 
         document.getElementById(
           "userInfo"
@@ -96,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-function instantiateSocketIOAndDependencies(token, userEmail) {
+function instantiateSocketIOAndDependencies(token, userEmail, userId) {
   let currentRoom = "";
   // socket actions
   const socket = io("ws://localhost:5001", {
@@ -128,7 +130,7 @@ function instantiateSocketIOAndDependencies(token, userEmail) {
     setCursor();
   });
 
-  socket.on("messages", ({ messages: msgs, nextCursor, user }) => {
+  socket.on(`messages-${userId}`, ({ messages: msgs, nextCursor, user }) => {
     for (const msg of msgs ?? []) {
       const item = document.createElement("li");
       item.setAttribute("id", msg._id);
