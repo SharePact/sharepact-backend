@@ -71,3 +71,31 @@ exports.updateBankDetailsSchema = z
     sortCode: string().optional(),
   })
   .strict();
+
+exports.markMessagesAsReadSchema = z
+  .object({
+    groupId: string().optional(),
+    messageIds: array(string().optional()).optional(),
+  })
+  .strict();
+
+exports.contactSupportSchema = z
+  .object({
+    name: string().optional(),
+    email: string({ required_error: "email is required" }),
+    message: string({ required_error: "message is required" }),
+  })
+  .strict();
+
+exports.updateNotificationConfigSchema = z
+  .object({
+    loginAlert: boolean().optional(),
+    passwordChanges: boolean().optional(),
+    newGroupCreation: boolean().optional(),
+    groupInvitation: boolean().optional(),
+    groupMessages: boolean().optional(),
+    subscriptionUpdates: boolean().optional(),
+    paymentReminders: boolean().optional(),
+    renewalAlerts: boolean().optional(),
+  })
+  .strict();

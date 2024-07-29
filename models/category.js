@@ -4,7 +4,7 @@ const { getPaginatedResults } = require("../utils/pagination");
 const modelName = "Category";
 const CategorySchema = new mongoose.Schema(
   {
-    categoryName: { type: String, required: true },
+    categoryName: { type: String, required: true, index: true },
     imageUrl: { type: String },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

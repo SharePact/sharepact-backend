@@ -83,7 +83,7 @@ class Messaging {
           cursor
         );
 
-        this.io.to(room).emit("messages", {
+        this.io.to(room).emit(`messages-${socket.user._id}`, {
           messages,
           nextCursor,
           user: socket.user,

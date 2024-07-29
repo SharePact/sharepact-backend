@@ -1,14 +1,26 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const { getPaginatedResults } = require("../utils/pagination");
+const { boolean } = require("zod");
 const modelName = "Message";
 const MessageSchema = new Schema(
   {
     content: { type: String, required: true },
-    sender: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
-    group: { type: mongoose.Types.ObjectId, required: true, ref: "Group" },
-    replyTo: { type: mongoose.Types.ObjectId, ref: modelName },
-    sentAt: { type: Date, default: Date.now },
+    sender: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: "User",
+      index: true,
+    },
+    group: {
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: "Group",
+      index: true,
+    },
+    replyTo: { type: mongoose.Types.ObjectId, ref: modelName, index: true },
+    readBy: [{ type: mongoose.Types.ObjectId, ref: "User", index: true }],
+    sentAt: { type: Date, default: Date.now, index: true },
   },
   {
     methods: {
@@ -64,6 +76,45 @@ const MessageSchema = new Schema(
         });
         await newMessage.save();
         return newMessage;
+      },
+      async getUnreadMessagesCount(userId) {
+        const model = mongoose.model(modelName);
+        const count = await model
+          .countDocuments({
+            readBy: { $ne: userId },
+          })
+          .exec();
+        return count;
+      },
+      async getUnreadMessagesCountByGroup(userId, groupId) {
+        const model = mongoose.model(modelName);
+        const count = await model
+          .countDocuments({
+            group: groupId,
+            readBy: { $ne: userId },
+          })
+          .exec();
+        return count;
+      },
+      async markMessagesAsReadByIds(userId, ids) {
+        const model = mongoose.model(modelName);
+        await model
+          .updateMany(
+            { _id: { $in: ids }, readBy: { $ne: userId } },
+            { $addToSet: { readBy: userId } }
+          )
+          .exec();
+        return;
+      },
+      async markAllMessagesAsReadByGroup(userId, groupId) {
+        const model = mongoose.model(modelName);
+        await model
+          .updateMany(
+            { group: groupId, readBy: { $ne: userId } },
+            { $addToSet: { readBy: userId } }
+          )
+          .exec();
+        return;
       },
     },
   }

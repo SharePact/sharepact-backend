@@ -1,6 +1,8 @@
 const User = require("../models/user");
-const { hashPassword, comparePassword } = require("../utils/auth");
+const { comparePassword } = require("../utils/auth");
 const { BuildHttpResponse } = require("../utils/response");
+const AuthTokenModel = require("../models/authToken");
+const NotificationModel = require("../models/Notifications");
 
 // Predefined avatar URLs
 const avatarUrls = [
@@ -53,8 +55,8 @@ exports.updateAvatar = async (req, res) => {
 };
 
 // Update user's username
-exports.updateUsername = async (req, res) => {
-  const { username } = req.body;
+exports.updateUsernameAndEmail = async (req, res) => {
+  const { username, email } = req.body;
   const userId = req.user._id;
 
   if (!username) {
@@ -62,22 +64,36 @@ exports.updateUsername = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findByUsername(username);
-    if (existingUser && existingUser._id.toString() != userId.toString())
-      return BuildHttpResponse(res, 400, "username already exists");
+    const user = await User.findById(userId);
+    if (!user) return BuildHttpResponse(res, 404, "User not found");
 
-    const user = await User.findOneAndUpdate(
-      { _id: userId },
-      { username },
-      { new: true }
-    );
-
-    if (!user) {
-      return BuildHttpResponse(res, 404, "User not found");
+    let updateToUsername = null;
+    let updateToEmail = null;
+    if (username) {
+      const existingUser = await User.findByUsername(username);
+      if (existingUser && existingUser._id.toString() != userId.toString())
+        return BuildHttpResponse(res, 400, "username already exists");
+      updateToUsername = username;
     }
+    console.log(2);
+    if (email) {
+      const existingUser = await User.findByEmail(email);
+      if (existingUser && existingUser._id.toString() != userId.toString())
+        return BuildHttpResponse(res, 400, "username already exists");
+      updateToEmail = email;
+    }
+    console.log(3);
 
-    return BuildHttpResponse(res, 200, "Username updated successfully", {
+    await user.updateUsernameAndEmail({
+      username: updateToUsername,
+      email: updateToEmail,
+    });
+
+    console.log(4);
+
+    return BuildHttpResponse(res, 200, "Username/Email updated successfully", {
       username: user.username,
+      email: user.email,
     });
   } catch (error) {
     return BuildHttpResponse(res, 500, error.name);
@@ -109,9 +125,151 @@ exports.changePassword = async (req, res) => {
 
     await user.updatePassword(newPassword);
 
+    if (user.notificationConfig?.passwordChanges) {
+      await NotificationService.sendNotification({
+        type: "passwordChangeAlert",
+        userId: user._id,
+        to: [user.email],
+        textContent: "Password change successful",
+      });
+    }
+
     return BuildHttpResponse(res, 200, "Password changed successfully");
   } catch (error) {
     console.error("Error changing password:", error);
     return BuildHttpResponse(res, 500, "Internal server error");
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 500, "user not found");
+    }
+
+    await AuthTokenModel.deleteAllTokensByUser(user._id);
+
+    await user.deleteAccount();
+
+    return BuildHttpResponse(res, 200, "successful deleted account");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.UpdateNotificationConfig = async (req, res) => {
+  const userId = req.user._id;
+  const {
+    loginAlert,
+    passwordChanges,
+    newGroupCreation,
+    groupInvitation,
+    groupMessages,
+    subscriptionUpdates,
+    paymentReminders,
+    renewalAlerts,
+  } = req.body;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 500, "user not found");
+    }
+
+    await user.updateNotificationConfig({
+      loginAlert,
+      passwordChanges,
+      newGroupCreation,
+      groupInvitation,
+      groupMessages,
+      subscriptionUpdates,
+      paymentReminders,
+      renewalAlerts,
+    });
+
+    return BuildHttpResponse(res, 200, "update successful");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.getNotifications = async (req, res) => {
+  const userId = req.user._id;
+  const { page, limit } = req.pagination;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 500, "user not found");
+    }
+
+    const notifications = await NotificationModel.getNotifications(
+      userId,
+      page,
+      limit
+    );
+
+    return BuildHttpResponse(
+      res,
+      200,
+      "successful",
+      notifications.results,
+      notifications.pagination
+    );
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.getNotification = async (req, res) => {
+  const userId = req.user._id;
+  const { id } = req.params;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 500, "user not found");
+    }
+
+    const notification = await NotificationModel.findById(id);
+    if (!notification) {
+      return BuildHttpResponse(res, 500, "notification not found");
+    }
+
+    return BuildHttpResponse(res, 200, "successful", notification);
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.markNotificationsAsRead = async (req, res) => {
+  const userId = req.user._id;
+  const { ids } = req.body;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 500, "user not found");
+    }
+
+    await NotificationModel.markAsRead(ids, userId);
+
+    return BuildHttpResponse(res, 200, "successful");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.markAllNotificationsAsRead = async (req, res) => {
+  const userId = req.user._id;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 500, "user not found");
+    }
+
+    await NotificationModel.markAllAsRead(userId);
+
+    return BuildHttpResponse(res, 200, "successful");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
   }
 };

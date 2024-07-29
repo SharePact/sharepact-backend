@@ -20,6 +20,7 @@ const ServiceSchema = new mongoose.Schema(
     updatedAt: { type: Date, default: Date.now },
   },
   {
+    indexes: [{ fields: { categoryId: 1 } }],
     methods: {
       async findSubscriptionPlan(planName) {
         const plan = this?.subscriptionPlans?.find(
@@ -81,9 +82,14 @@ const ServiceSchema = new mongoose.Schema(
         await newService.save();
         return newService;
       },
-      async getServices(page = 1, limit = 10) {
+      async getServices(page = 1, limit = 10, category = null) {
         const model = mongoose.model(modelName);
-        const result = await getPaginatedResults(model, page, limit);
+        let query = {};
+
+        if (category) {
+          query.categoryId = category;
+        }
+        const result = await getPaginatedResults(model, page, limit, query);
         return result;
       },
     },

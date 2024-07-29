@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const modelName = "ChatRoom";
 const ChatRoomSchema = new Schema(
   {
-    group: { type: Types.ObjectId, required: true, ref: "Group" },
-    members: { type: [Types.ObjectId], ref: "User", default: [] },
+    group: { type: Types.ObjectId, required: true, ref: "Group", index: true },
+    members: { type: [Types.ObjectId], ref: "User", default: [], index: true },
   },
   {
     methods: {

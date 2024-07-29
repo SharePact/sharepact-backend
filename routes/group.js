@@ -29,7 +29,13 @@ router.get(
   checkAuth,
   GroupController.getJoinRequests
 );
+router.get(
+  "/by-code/:groupCode",
+  checkAuth,
+  GroupController.getGroupDetailsByCode
+);
 router.get("/:groupId", checkAuth, GroupController.getGroupDetails);
+router.post("/leave/:groupId", checkAuth, GroupController.leaveGroup);
 router.post("/activate/:groupId", checkAuth, GroupController.activateGroup);
 router.delete("/:id", checkAuth, GroupController.deleteGroup);
 module.exports = router;
