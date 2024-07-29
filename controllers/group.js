@@ -91,7 +91,7 @@ exports.activateGroup = async (req, res) => {
       return BuildHttpResponse(res, 400, "Group is already activated");
     }
 
-    // group.activated = true;
+    group.activated = true;
     group.nextSubscriptionDate = new Date(
       Date.now() + 30 * 24 * 60 * 60 * 1000
     ); // 30 days from now
