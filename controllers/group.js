@@ -22,7 +22,7 @@ const generateGroupCode = async () => {
 
 const generateInvoice = async (group, user) => {
   const templatePath = path.join(__dirname, "../templates/invoice.ejs");
-  const cost = group.totalCost / (group.members?.length + 1);
+  const cost = group.totalCost / group.members?.length;
   const amount = group.handlingFee + cost;
   const service = await ServiceModel.findById(group.service);
 
@@ -105,7 +105,6 @@ exports.activateGroup = async (req, res) => {
       group.members.map(async (member) => {
         const user = member.user;
         const buffer = await generateInvoice(group, user);
-        console.log(11, user._id);
         sendEmailWithBrevo({
           subject: `${group.groupName} - ${group.planName} invoice`,
           htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
@@ -118,16 +117,17 @@ exports.activateGroup = async (req, res) => {
         };
       })
     );
-    console.log(22);
+
+    // TODO: cleanup - removing this for now since admin is a member now
     // Also generate invoice for admin
-    const adminBuffer = await generateInvoice(group, group.admin);
-    sendEmailWithBrevo({
-      subject: `${group.groupName} - ${group.planName} invoice`,
-      htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
-      to: [{ email: group.admin.email }],
-      attachments: [{ name: "invoice.pdf", buffer: adminBuffer }],
-    });
-    console.log(33, group.admin._id);
+    // const adminBuffer = await generateInvoice(group, group.admin);
+    // sendEmailWithBrevo({
+    //   subject: `${group.groupName} - ${group.planName} invoice`,
+    //   htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
+    //   to: [{ email: group.admin.email }],
+    //   attachments: [{ name: "invoice.pdf", buffer: adminBuffer }],
+    // });
+    // console.log(33, group.admin._id);
 
     // Send the invoices as a response for testing purposes
     // res.setHeader("Content-Type", "application/pdf");
@@ -255,14 +255,15 @@ exports.getGroupsByServiceId = async (req, res) => {
 exports.getGroups = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    let { search, active } = req.query;
+    let { search, active, subscription_status } = req.query;
     const userId = req.user._id;
     const groups = await GroupModel.getGroups(
       userId,
       page,
       limit,
       search ?? "",
-      active ?? null
+      active ?? null,
+      subscription_status ?? null
     );
     return BuildHttpResponse(
       res,
