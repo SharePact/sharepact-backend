@@ -1,11 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Login Alert</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New sign-in detected</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: left;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+        .header img {
+            width: 100px;
+        }
+        .content h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .content p {
+            color: #333333;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .footer {
+            margin-top: 20px;
+            color: #888888;
+            font-size: 12px;
+            text-align: center;
+            border-top: 1px solid #e4e4e4;
+            padding-top: 20px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .footer a {
+            color: #0056d6;
+            text-decoration: none;
+        }
+        .social-icons {
+            margin: 10px 0;
+        }
+        .social-icons img {
+            width: 24px;
+            margin: 0 5px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Login Alert</h1>
-  <p>You have logged in successfully to your sharepact account.</p>
-  <p>If this wasn't you, please take appropriate action to secure your account.</p>
+    <div class="container">
+        <div class="header">
+            <img src="https://media.istockphoto.com/id/826567080/vector/e-mail-icon-simple-vector-illustration-red-color.jpg?s=612x612&w=0&k=20&c=ysxmzarWz_6a2oyi1ue9p6OUBXAw8W1LQPsyorc_5hY=" alt=" Logo">
+        </div>
+        <div class="content">
+            <h1>New sign-in detected</h1>
+            <p>We noticed a new sign-in to your account on a device that we don't recognize. If this wasn't you, please secure your account.</p>
+            <p>Please ignore if this was done by you.</p>
+        </div>
+        <div class="footer">
+            <p>© 2022. Company.com All rights reserved</p>
+            <p>New York, 110043</p>
+            <div class="social-icons">
+                <a href="https://plus.google.com"><img src="google-icon-url" alt="Google"></a>
+                <a href="https://facebook.com"><img src="facebook-icon-url" alt="Facebook"></a>
+                <a href="https://twitter.com"><img src="twitter-icon-url" alt="Twitter"></a>
+                <a href="https://linkedin.com"><img src="linkedin-icon-url" alt="LinkedIn"></a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

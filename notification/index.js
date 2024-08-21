@@ -26,7 +26,7 @@ class NotificationService {
       passwordReset: "passwordReset.ejs",
       loginAlert: "loginAlert.ejs",
       passwordChangeAlert: "passwordChangeAlert.ejs",
-      emailVerificationSuccessful: "emailVerificationSuccessful.js",
+      emailVerificationSuccessful: "emailVerificationSuccessful.ejs",
     };
 
     const templateFile = templates[type];
