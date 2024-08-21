@@ -255,14 +255,15 @@ exports.getGroupsByServiceId = async (req, res) => {
 exports.getGroups = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    let { search, active } = req.query;
+    let { search, active, subscription_status } = req.query;
     const userId = req.user._id;
     const groups = await GroupModel.getGroups(
       userId,
       page,
       limit,
       search ?? "",
-      active ?? null
+      active ?? null,
+      subscription_status ?? null
     );
     return BuildHttpResponse(
       res,

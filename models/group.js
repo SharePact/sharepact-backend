@@ -232,7 +232,8 @@ const GroupSchema = new Schema(
         page = 1,
         limit = 10,
         search = "",
-        active = null
+        active = null,
+        subscriptionStatus = null
       ) {
         const model = mongoose.model(modelName);
 
@@ -250,6 +251,12 @@ const GroupSchema = new Schema(
             { planName: new RegExp(search, "i") }, // case-insensitive regex match
             { groupName: new RegExp(search, "i") }, // case-insensitive regex match
           ];
+        }
+
+        if (subscriptionStatus) {
+          query["members"] = {
+            $elemMatch: { user: userId, subscriptionStatus },
+          };
         }
 
         const result = await getPaginatedResults(model, page, limit, query);
