@@ -42,7 +42,6 @@ exports.signupWithEmail = async (req, res) => {
 
     // Assign a random avatar URL
     const avatarUrl = avatarUrls[Math.floor(Math.random() * avatarUrls.length)];
-
     const newUser = await UserModel.createUser({
       email,
       password: password, // Store hashed password
@@ -53,15 +52,15 @@ exports.signupWithEmail = async (req, res) => {
     });
 
     const otp = await OTPModel.createNumberOTP(
-      user._id,
+      newUser._id,
       "emailVerification",
       6
     );
 
     await NotificationService.sendNotification({
       type: "emailVerification",
-      userId: user._id,
-      to: [user.email],
+      userId: newUser._id,
+      to: [newUser.email],
       textContent: "",
       code: otp.code,
     });
