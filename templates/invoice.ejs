@@ -1,131 +1,164 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
         }
-        .invoice-box {
+        .invoice-container {
             max-width: 800px;
-            margin: auto;
-            padding: 30px;
-            border: 1px solid #eee;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
-        .invoice-box table {
-            width: 100%;
-            line-height: inherit;
-            text-align: left;
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
-        .invoice-box table td {
-            padding: 5px;
+        .invoice-header .logo img {
+            width: 80px;
+        }
+        .invoice-header .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .invoice-details {
+            margin-bottom: 20px;
+        }
+        .invoice-details .billed-to,
+        .invoice-details .invoice-info {
+            width: 48%;
+            display: inline-block;
             vertical-align: top;
         }
-        .invoice-box table tr td:nth-child(2) {
-            text-align: right;
+        .invoice-details p {
+            margin: 5px 0;
         }
-        .invoice-box table tr.top table td {
-            padding-bottom: 20px;
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        .invoice-box table tr.information table td {
-            padding-bottom: 40px;
-        }
-        .invoice-box table tr.heading td {
-            background: #eee;
+        .invoice-table th,
+        .invoice-table td {
+            padding: 15px;
+            text-align: left;
             border-bottom: 1px solid #ddd;
+        }
+        .invoice-table th {
+            background-color: #f8f8f8;
             font-weight: bold;
         }
-        .invoice-box table tr.details td {
-            padding-bottom: 20px;
+        .invoice-summary {
+            text-align: right;
+            margin-top: 20px;
         }
-        .invoice-box table tr.item td {
-            border-bottom: 1px solid #eee;
+        .invoice-summary p {
+            margin: 5px 0;
+            font-size: 18px;
         }
-        .invoice-box table tr.item.last td {
-            border-bottom: none;
+        .invoice-summary .total {
+            font-size: 24px;
+            font-weight: bold;
         }
-        .invoice-box table tr.total td:nth-child(2) {
-            border-top: 2px solid #eee;
+        .payment-info {
+            margin-top: 40px;
+        }
+        .payment-info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .signature {
+            text-align: right;
+            margin-top: 50px;
+        }
+        .signature p {
+            margin: 0;
+            font-weight: bold;
+        }
+        .thank-you {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 20px;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="invoice-box">
-        <table cellpadding="0" cellspacing="0">
-            <tr class="top">
-                <td colspan="2">
-                    <table>
-                        <tr>
-                            <td class="title">
-                                <img src="<%= user.avatarUrl %>" style="width: 100%; max-width: 300px;">
-                            </td>
-                            <td>
-                                Invoice #: <%= group.groupCode %><br>
-                                Created: <%= new Date().toLocaleDateString() %><br>
-                                Due: <%= new Date(group.nextSubscriptionDate).toLocaleDateString() %>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <div class="logo">
+                <img src="https://media.istockphoto.com/id/826567080/vector/e-mail-icon-simple-vector-illustration-red-color.jpg?s=612x612&w=0&k=20&c=ysxmzarWz_6a2oyi1ue9p6OUBXAw8W1LQPsyorc_5hY=" alt=" Logo">
+            </div>
+            <div class="invoice-title">
+                INVOICE
+            </div>
+        </div>
+        
+        <div class="invoice-details">
+            <div class="billed-to">
+                <strong>BILLED TO:</strong>
+                <p><%= user.username %></p>
+                <p><%= user.email %></p>
+            </div>
+            <div class="invoice-info">
+                <p><strong>Invoice No.:</strong> <%= group.groupCode %></p>
+                <p><strong>Date:</strong> <%= new Date().toLocaleDateString() %></p>
+                <p><strong>Due Date:</strong> <%= new Date(group.nextSubscriptionDate).toLocaleDateString() %></p>
+            </div>
+        </div>
+        
+        <table class="invoice-table">
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
             </tr>
-            <tr class="information">
-                <td colspan="2">
-                    <table>
-                        <tr>
-                            <td>
-                                <%= group.groupName %><br>
-                                <%= group.subscriptionService %> - <%= group.serviceName %>
-                            </td>
-                            <td>
-                                <%= user.username %><br>
-                                <%= user.email %>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
+            <tr>
+                <td>Subscription Cost</td>
+                <td>1</td>
+                <td><%= cost %></td>
+                <td><%= cost %></td>
             </tr>
-            <tr class="heading">
-                <td>
-                    Item
-                </td>
-                <td>
-                    Price
-                </td>
+            <tr>
+                <td>Handling Fee</td>
+                <td>1</td>
+                <td><%= group.handlingFee %></td>
+                <td><%= group.handlingFee %></td>
             </tr>
-            <tr class="item">
-                <td>
-                    Subscription Cost
-                </td>
-                <td>
-                    <%= cost %>
-                </td>
-            </tr>
-            <tr class="item">
-                <td>
-                    Handling Fee
-                </td>
-                <td>
-                    <%= group.handlingFee %>
-                </td>
-            </tr>
-            <tr class="total">
-                <td></td>
-                <td>
-                    Total: <%= amount %>
-                </td>
-            </tr>
-            <tr class="total">
-                <td>Payment Link</td>
-                <td>
-                    <%= payment_link %>
-                </td>
+            <tr>
+                <td colspan="3" class="total">Total</td>
+                <td class="total"><%= amount %></td>
             </tr>
         </table>
+        
+        <div class="payment-info">
+            <p><strong>Payment Link:</strong> <%= payment_link %></p>
+        </div>
+
+        <div class="thank-you">
+            Thank you!
+        </div>
+
+        <div class="signature">
+            <p><%= user.username %></p>
+            <p><%= user.address %></p>
+        </div>
     </div>
 </body>
 </html>
-
-
