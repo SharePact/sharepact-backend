@@ -13,15 +13,15 @@ const {
 
 // Predefined avatar URLs (example)
 const avatarUrls = [
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar1.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar2.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar3.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar4.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar5.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar6.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar7.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar8.png",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123456/avatar9.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311179/avatar1_tza31y.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311179/avatar2_yxxssj.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311180/avatar3_v4buk8.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311179/avatar4_pz0p77.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311179/avatar5_v4radg.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311180/avatar6_flsguh.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311179/avatar7_e1nxzw.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311179/avatar8_w4vrxz.png",
+  "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724311180/avatar9_bnz6kd.png",
   // Add more URLs as needed
 ];
 
