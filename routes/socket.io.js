@@ -27,7 +27,8 @@ class Messaging {
       // Middleware for authentication
       async (socket, next) => {
         console.log("authenticating");
-        const token = socket.handshake.auth.token;
+        const token =
+          socket.handshake.auth.token || socket.handshake.headers.token;
         if (token) {
           const resp = await getUserFromToken(token);
           if (resp.error) {
