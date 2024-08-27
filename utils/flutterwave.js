@@ -4,7 +4,7 @@ const baseUrl = "https://api.flutterwave.com";
 const secKey = process?.env?.FLUTTERWAVE_SEC_KEY;
 
 class Flutterwave {
-  static async get_url(
+  static async getUrl({
     user_id,
     email,
     name,
@@ -13,8 +13,8 @@ class Flutterwave {
     amount,
     currency,
     redirect_url,
-    description = null
-  ) {
+    description = null,
+  }) {
     if (!description) {
       description = "sharepact subscription payment";
     }
@@ -24,23 +24,24 @@ class Flutterwave {
       Authorization: `Bearer ${secKey}`,
       "Content-Type": "application/json",
     };
+
     const payload = JSON.stringify({
       tx_ref: transaction_reference,
       amount: amount,
       currency: currency,
       redirect_url: redirect_url,
       payment_options: "",
-      meta: { consumer_id: user_id },
       customer: {
         email: email,
         phonenumber: phone,
         name: name,
       },
       customizations: {
-        title: "Kwek Market",
+        title: "Sharepact",
         description: description,
-        logo: "https://kwekmarket.com/_next/image?url=%2Fsvg%2Fkweklogo.svg&w=256&q=75",
+        logo: "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724759036/SharePact_App_Group_5_harmdy.png",
       },
+      meta: { consumer_id: user_id },
     });
 
     try {
