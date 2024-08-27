@@ -2,6 +2,7 @@ const UserModel = require("../models/user");
 const { BuildHttpResponse } = require("../utils/response");
 const AuthTokenModel = require("../models/authToken");
 const OTPModel = require("../models/otp");
+const { getUserFromToken } = require("../middleware/checkauth");
 
 const NotificationService = require("../notification/index");
 const {
@@ -141,6 +142,18 @@ exports.logout = async (req, res) => {
     await AuthTokenModel.deleteToken(authToken);
 
     return BuildHttpResponse(res, 200, "successfully logged out");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.verifyToken = async (req, res) => {
+  const authToken = req.authToken;
+  try {
+    const resp = await getUserFromToken(authToken);
+    return BuildHttpResponse(res, 200, "success", {
+      valid: resp.user != null && resp.error == null,
+    });
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

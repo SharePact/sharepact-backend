@@ -10,6 +10,7 @@ router.post("/signup", ZodMiddleware(createUserSchema), auth.signupWithEmail);
 
 // Sign-in with email and password
 router.post("/signin", auth.signinWithEmail);
+router.get("/verify-token", checkAuth, auth.verifyToken);
 router.post("/logout", checkAuth, auth.logout);
 router.post("/logout-all-sessions", checkAuth, auth.logoutAllSessions);
 router.get("/user", checkAuth, auth.getUserDetails);
