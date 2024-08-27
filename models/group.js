@@ -268,7 +268,27 @@ const GroupSchema = new Schema(
           };
         }
 
-        const result = await getPaginatedResults(model, page, limit, query);
+        const options = {
+          populate: [
+            {
+              path: "admin",
+              select: "username avatarUrl",
+            },
+            {
+              path: "service",
+              select: "serviceName logoUrl",
+            },
+          ],
+        };
+
+        const result = await getPaginatedResults(
+          model,
+          page,
+          limit,
+          query,
+          {},
+          options
+        );
         return result;
       },
       async updateMemberConfirmStatus(groupId, userId, confirmStatus) {
