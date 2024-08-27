@@ -512,3 +512,32 @@ exports.leaveGroup = async (req, res) => {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
+exports.UpdateConfirmStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { groupId, action } = req.params;
+    if (!["confirm", "unconfirm"].includes(action)) {
+      return BuildHttpResponse(res, 404, "page not found");
+    }
+
+    const group = await GroupModel.findById(groupId);
+    if (!group) {
+      return BuildHttpResponse(res, 404, "Group not found");
+    }
+
+    await group.updateMemberConfirmStatus(userId, action == "confirm");
+
+    if (!(await group.isMemberConfirmed(group.admin))) {
+      await group.updateMemberConfirmStatus(group.admin, true);
+    }
+
+    if (await group.haveAllMembersConfirmed()) {
+      // TODO: transfer money to admin
+    }
+
+    return BuildHttpResponse(res, 200, "successfully updated status");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};

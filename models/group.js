@@ -80,6 +80,15 @@ const GroupSchema = new Schema(
         }
         return this;
       },
+      async haveAllMembersConfirmed() {
+        return this.members.every((member) => member.confirmStatus);
+      },
+      async isMemberConfirmed(userId) {
+        const member = this.members.find(
+          (member) => member.user.toString() === userId.toString()
+        );
+        return member ? member.confirmStatus : null;
+      },
       async updateMemberSubscriptionStatus(userId, subscriptionStatus) {
         const member = this.members.find(
           (member) => member.user.toString() === userId.toString()
@@ -261,6 +270,13 @@ const GroupSchema = new Schema(
 
         const result = await getPaginatedResults(model, page, limit, query);
         return result;
+      },
+      async updateMemberConfirmStatus(groupId, userId, confirmStatus) {
+        const model = mongoose.model(modelName);
+        return await model.updateOne(
+          { _id: groupId, "members.user": userId },
+          { $set: { "members.$.confirmStatus": confirmStatus } }
+        );
       },
     },
   }

@@ -36,6 +36,11 @@ router.get(
 );
 router.get("/:groupId", checkAuth, GroupController.getGroupDetails);
 router.post("/leave/:groupId", checkAuth, GroupController.leaveGroup);
+router.post(
+  "/confirm-status/:groupId/:action",
+  checkAuth,
+  GroupController.UpdateConfirmStatus
+);
 router.post("/activate/:groupId", checkAuth, GroupController.activateGroup);
 router.delete("/:id", checkAuth, GroupController.deleteGroup);
 module.exports = router;
