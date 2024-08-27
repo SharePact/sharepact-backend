@@ -7,7 +7,7 @@ const ejs = require("ejs");
 const path = require("path");
 const { BuildHttpResponse } = require("../utils/response");
 const { sendEmailWithBrevo } = require("../notification/brevo");
-const Paystack = require("../utils/paystack");
+const Flutterwave = require("../utils/flutterwave");
 const PaymentModel = require("../models/payment");
 
 const generateGroupCode = async () => {
@@ -26,13 +26,13 @@ const generateInvoice = async (group, user) => {
   const amount = group.handlingFee + cost;
   const service = await ServiceModel.findById(group.service);
 
-  const resp = await Paystack.getUrl({
+  const resp = await Flutterwave.getUrl({
     user_id: user._id,
     email: user.email,
     name: user.username,
     transaction_reference: uuidv4(),
     amount: amount,
-    currency: "NGN",
+    currency: service.currency,
     redirect_url: `${process.env?.APP_URL}/api/verify-payment`,
   });
 

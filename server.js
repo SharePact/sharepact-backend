@@ -3,7 +3,6 @@ const Server = require("./middleware/index.js");
 const Router = require("./routes/index.js");
 const processQueueManager = require("./processQueue");
 const NotificationService = require("./notification/index");
-const Paystack = require("./utils/paystack");
 
 require("dotenv").config();
 

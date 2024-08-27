@@ -2,7 +2,7 @@ const BankDetails = require("../models/bankdetails");
 const PaymentModel = require("../models/payment");
 const { BuildHttpResponse } = require("../utils/response");
 const GroupModel = require("../models/group");
-const Paystack = require("../utils/paystack");
+const Flutterwave = require("../utils/flutterwave");
 
 exports.addBankDetails = async (req, res) => {
   try {
@@ -103,9 +103,10 @@ exports.deleteBankDetails = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
   try {
-    let { trxref, reference } = req.query;
+    // let { trxref, reference } = req.query;
+    let { tx_ref, transaction_id } = req.query;
 
-    const payment = await PaymentModel.getPaymentByReference(reference);
+    const payment = await PaymentModel.getPaymentByReference(tx_ref);
     if (!payment)
       return res
         .status(400)
@@ -136,7 +137,7 @@ exports.verifyPayment = async (req, res) => {
           '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">you are not a member of the group</p>'
         );
 
-    const pResponse = await Paystack.verify(reference);
+    const pResponse = await Flutterwave.verify(transaction_id);
     if (pResponse.status) {
       await group.updateMemberSubscriptionStatus(payment.user, "active");
       await payment.updateStatus("successful");
