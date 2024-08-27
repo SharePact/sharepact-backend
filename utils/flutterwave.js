@@ -72,27 +72,6 @@ class Flutterwave {
     }
   }
 
-  //   {
-  //     "tx_ref": "33e79346-3f67-421c-9e38-28860de5b10f",
-  //     "amount": 5010,
-  //     "currency": "USD",
-  //     "redirect_url": "http://127.0.0.1:5001/api/verify-payment",
-  //     "payment_options": "",
-  //     "meta": {
-  //         "consumer_id": "669743cc4c71861346ef3b34"
-  //     },
-  //     "customer": {
-  //         "user_id": "669743cc4c71861346ef3b34",
-  //         "email": "gregoflash05@gmail.com",
-  //         "name": "Nazastubborn"
-  //     },
-  //     "customizations": {
-  //         "title": "Sharepact",
-  //         "description": "sharepact subscription payment",
-  //         "logo": "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1724759036/SharePact_App_Group_5_harmdy.png"
-  //     }
-  // }
-
   static async verify(transaction_id) {
     const url = `${baseUrl}/v3/transactions/${transaction_id}/verify`;
     const headers = {
