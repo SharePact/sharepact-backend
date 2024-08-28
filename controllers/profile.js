@@ -3,6 +3,7 @@ const { comparePassword } = require("../utils/auth");
 const { BuildHttpResponse } = require("../utils/response");
 const AuthTokenModel = require("../models/authToken");
 const NotificationModel = require("../models/Notifications");
+const NotificationService = require("../notification/index");
 
 // Predefined avatar URLs
 const avatarUrls = [
