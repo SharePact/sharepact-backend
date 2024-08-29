@@ -3,7 +3,7 @@ const cloudinary = require("../config/cloudinary");
 const { BuildHttpResponse } = require("../utils/response");
 const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const Service = require("../models/service");
-
+const { ObjectId } = require("mongodb");
 
 exports.createCategory = async (req, res) => {
   try {
@@ -45,25 +45,35 @@ exports.getAllCategories = async (req, res) => {
 };
 
 exports.getCategoryById = async (req, res) => {
+  let id = new ObjectId();
   try {
-    const category = await Category.findById(req.params.id);
-    if (!category) return BuildHttpResponse(res, 404, "Category not found");
+    id = new ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Category not found");
+  }
 
-    const services = await Service.find({ categoryId: req.params.id });
+  try {
+    const category = await Category.findById(id);
+    if (!category)
+      return BuildHttpResponse(res, 404, "Category not found", category);
 
-    return BuildHttpResponse(res, 200, "Category fetched successfully", {
-      category,
-      services, 
-    });
+    const services = await Service.find({ categoryId: id });
+    return BuildHttpResponse(res, 200, "successful", { category, services });
   } catch (err) {
     return BuildHttpResponse(res, 500, err.message);
   }
 };
 
-
 exports.updateCategory = async (req, res) => {
+  let id = new ObjectId();
   try {
-    const category = await Category.findById(req.params.id);
+    id = new ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Category not found");
+  }
+
+  try {
+    const category = await Category.findById(id);
     if (!category) return BuildHttpResponse(res, 404, "Category not found");
 
     let imageUrl = "";
@@ -80,8 +90,14 @@ exports.updateCategory = async (req, res) => {
 };
 
 exports.deleteCategory = async (req, res) => {
+  let id = new ObjectId();
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
+    id = new ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Category not found");
+  }
+  try {
+    const category = await Category.findByIdAndDelete(id);
     if (!category) return BuildHttpResponse(res, 404, "Category not found");
 
     return BuildHttpResponse(res, 200, "Category deleted successfully");

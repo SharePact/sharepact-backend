@@ -1,12 +1,19 @@
 const GroupModel = require("../models/group");
 const Message = require("../models/message");
 const { BuildHttpResponse } = require("../utils/response");
+const { ObjectId } = require("mongodb");
 
 exports.getMessagesByGroup = async (req, res) => {
+  let groupId = new ObjectId();
+  try {
+    groupId = new ObjectId(req.params.groupId);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Group not found");
+  }
   try {
     let { cursor, limit } = req.query;
     const userId = req.user._id;
-    const groupId = req.params.groupId;
+
     const group = await GroupModel.findById(groupId);
     if (!group) return BuildHttpResponse(res, 404, "Group not found");
 
@@ -29,9 +36,14 @@ exports.getMessagesByGroup = async (req, res) => {
 };
 
 exports.getUnreadMessagesCount = async (req, res) => {
+  let groupId = new ObjectId();
   try {
-    const userId = req.user._id;
-    const groupId = req.params.groupId;
+    groupId = new ObjectId(req.params.groupId);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Group not found");
+  }
+
+  try {
     const group = await GroupModel.findById(groupId);
     if (!group) return BuildHttpResponse(res, 404, "Group not found");
 
