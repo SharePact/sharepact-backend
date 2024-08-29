@@ -102,6 +102,155 @@ class Flutterwave {
       };
     }
   }
+
+  static async initTransfer({
+    groupCreatorId,
+    bankCode,
+    accountNumber,
+    amount,
+    currency,
+    reference,
+    meta = {},
+    narration = "",
+  }) {
+    if (!groupCreatorId) throw new Error("group creator id is required");
+
+    const url = `${baseUrl}/v3/transfers`;
+    const headers = {
+      Authorization: `Bearer ${secKey}`,
+      "Content-Type": "application/json",
+    };
+
+    if (narration == "")
+      narration = `Transfer to Group Creator ${groupCreatorId}`;
+
+    const payload = JSON.stringify({
+      accountBank: bankCode,
+      accountNumber,
+      amount,
+      currency,
+      reference,
+      meta,
+      narration,
+    });
+
+    try {
+      const response = await axios.post(url, payload, { headers });
+      if (response.data.status === "success") {
+        return {
+          status: true,
+          message: response.data.message,
+          id: response.data.data.id,
+          reference,
+          gateway: "flutterwave",
+        };
+      } else {
+        return {
+          status: false,
+          message: response.data.message,
+          id: "",
+          reference,
+          gateway: "flutterwave",
+        };
+      }
+    } catch (error) {
+      return {
+        status: false,
+        message: error.message,
+        id: "",
+        reference,
+        gateway: "flutterwave",
+      };
+    }
+  }
+
+  static async fetchTransfer(id) {
+    const url = `${baseUrl}/v3/transfers/${id}`;
+    const headers = {
+      Authorization: `Bearer ${secKey}`,
+      "Content-Type": "application/json",
+    };
+
+    try {
+      const response = await axios.get(url, { headers });
+      if (response.data.status === "success") {
+        return {
+          status: response.data.data.status == "SUCCESSFUL",
+          message: response.data.message,
+          id: response.data.data.id,
+          meta: response.data.data.meta,
+          transaction_info: response.data.data,
+        };
+      } else {
+        return {
+          status: false,
+          message: response.data.message,
+          transaction_info: "",
+          id: null,
+          meta: null,
+        };
+      }
+    } catch (error) {
+      return {
+        status: false,
+        message: error.message,
+        transaction_info: "",
+        id: null,
+        meta: null,
+      };
+    }
+  }
 }
+
+// sample init transfer response
+// {
+//   "status": "success",
+//   "message": "Transfer Queued Successfully",
+//   "data": {
+//     "id": 26251,
+//     "account_number": "1234567840",
+//     "bank_code": "044",
+//     "full_name": "Flutterwave Developers",
+//     "created_at": "2020-01-20T16:09:34.000Z",
+//     "currency": "NGN",
+//     "debit_currency": "NGN",
+//     "amount": 5500,
+//     "fee": 45,
+//     "status": "NEW",
+//     "reference": "akhlm-pstmnpyt-rfxx007_PMCKDU_1",
+//     "meta": null,
+//     "narration": "Akhlm Pstmn Trnsfr xx007",
+//     "complete_message": "",
+//     "requires_approval": 0,
+//     "is_approved": 1,
+//     "bank_name": "ACCESS BANK NIGERIA"
+//   }
+// }
+
+//sample fetch transfer response
+// {
+//     "status": "success",
+//     "message": "Transfer fetched",
+//     "data": {
+//         "id": 1933222,
+//         "account_number": "0251238458",
+//         "bank_code": "058",
+//         "full_name": " Flutterwave Developers",
+//         "created_at": "2020-06-11T00:36:20.000Z",
+//         "currency": "NGN",
+//         "debit_currency": "NGN",
+//         "amount": 300,
+//         "fee": 10.75,
+//         "status": "SUCCESSFUL",
+//         "reference": "new-actual-transfer-ref1",
+//         "meta": null,
+//         "narration": "Akhlm Pstmn Trnsfr xx007",
+//         "approver": null,
+//         "complete_message": "Transaction was successful",
+//         "requires_approval": 0,
+//         "is_approved": 1,
+//         "bank_name": "GTBANK PLC"
+//     }
+// }
 
 module.exports = Flutterwave;
