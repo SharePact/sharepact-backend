@@ -43,8 +43,15 @@ exports.getAllCategories = async (req, res) => {
 };
 
 exports.getCategoryById = async (req, res) => {
+  let id = new ObjectId();
   try {
-    const category = await Category.findById(req.params.id);
+    id = new ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Category not found");
+  }
+
+  try {
+    const category = await Category.findById(id);
     if (!category)
       return BuildHttpResponse(res, 404, "Category not found", category);
     return BuildHttpResponse(res, 200, "successful", category);
@@ -54,8 +61,15 @@ exports.getCategoryById = async (req, res) => {
 };
 
 exports.updateCategory = async (req, res) => {
+  let id = new ObjectId();
   try {
-    const category = await Category.findById(req.params.id);
+    id = new ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Category not found");
+  }
+
+  try {
+    const category = await Category.findById(id);
     if (!category) return BuildHttpResponse(res, 404, "Category not found");
 
     let imageUrl = "";
@@ -72,8 +86,14 @@ exports.updateCategory = async (req, res) => {
 };
 
 exports.deleteCategory = async (req, res) => {
+  let id = new ObjectId();
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
+    id = new ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Category not found");
+  }
+  try {
+    const category = await Category.findByIdAndDelete(id);
     if (!category) return BuildHttpResponse(res, 404, "Category not found");
 
     return BuildHttpResponse(res, 200, "Category deleted successfully");
