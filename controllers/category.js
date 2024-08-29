@@ -2,6 +2,8 @@ const Category = require("../models/category");
 const cloudinary = require("../config/cloudinary");
 const { BuildHttpResponse } = require("../utils/response");
 const { uploadBufferToCloudinary } = require("../utils/cloudinary");
+const Service = require("../models/service");
+
 
 exports.createCategory = async (req, res) => {
   try {
@@ -45,13 +47,19 @@ exports.getAllCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
-    if (!category)
-      return BuildHttpResponse(res, 404, "Category not found", category);
-    return BuildHttpResponse(res, 200, "successful", category);
+    if (!category) return BuildHttpResponse(res, 404, "Category not found");
+
+    const services = await Service.find({ categoryId: req.params.id });
+
+    return BuildHttpResponse(res, 200, "Category fetched successfully", {
+      category,
+      services, 
+    });
   } catch (err) {
     return BuildHttpResponse(res, 500, err.message);
   }
 };
+
 
 exports.updateCategory = async (req, res) => {
   try {
