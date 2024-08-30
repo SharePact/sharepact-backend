@@ -3,7 +3,7 @@ const multer = require("../config/multer");
 const serviceController = require("../controllers/service");
 const { createServiceSchema } = require("../zodSchemas/index");
 const { checkAuth } = require("../middleware/checkauth");
-const checkAdmin = require("../middleware/checkAdmin");
+const checkAdmin = require("../middleware/checkadmin");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 
 const router = express.Router();

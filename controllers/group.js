@@ -9,6 +9,7 @@ const { BuildHttpResponse } = require("../utils/response");
 const { sendEmailWithBrevo } = require("../notification/brevo");
 const Flutterwave = require("../utils/flutterwave");
 const PaymentModel = require("../models/payment");
+const emailQueue = require("../utils/email.queue");
 
 const generateGroupCode = async () => {
   let code;
@@ -37,7 +38,7 @@ const generateInvoice = async (group, user) => {
   });
 
   if (!resp.status) throw new Error("error generating payment link");
-  console.log("88888888888888888, succeded");
+  // console.log("88888888888888888, succeded");
 
   await PaymentModel.createPayment({
     reference: resp.reference,
@@ -101,22 +102,25 @@ exports.activateGroup = async (req, res) => {
 
     // Generate invoices for all members including admin
 
-    const invoices = await Promise.all(
-      group.members.map(async (member) => {
-        const user = member.user;
-        const buffer = await generateInvoice(group, user);
-        sendEmailWithBrevo({
-          subject: `${group.groupName} - ${group.planName} invoice`,
-          htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
-          to: [{ email: user.email }],
-          attachments: [{ name: "invoice.pdf", buffer: buffer }],
-        });
-        return {
-          user,
-          buffer,
-        };
-      })
-    );
+    
+    await emailQueue('sendEmail', { group });
+    
+    // const invoices = await Promise.all(
+    //   group.members.map(async (member) => {
+    //     const user = member.user;
+    //     const buffer = await generateInvoice(group, user);
+    //     sendEmailWithBrevo({
+    //       subject: `${group.groupName} - ${group.planName} invoice`,
+    //       htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
+    //       to: [{ email: user.email }],
+    //       attachments: [{ name: "invoice.pdf", buffer: buffer }],
+    //     });
+    //     return {
+    //       user,
+    //       buffer,
+    //     };
+    //   })
+    // );
 
     // TODO: cleanup - removing this for now since admin is a member now
     // Also generate invoice for admin

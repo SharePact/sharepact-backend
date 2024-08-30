@@ -6,7 +6,7 @@ const {
   addBankDetailsSchema,
   updateBankDetailsSchema,
 } = require("../zodSchemas/index");
-const checkAdmin = require("../middleware/checkAdmin");
+const checkAdmin = require("../middleware/checkadmin");
 
 const router = express.Router();
 
