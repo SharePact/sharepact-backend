@@ -1,14 +1,10 @@
 const GroupModel = require("../models/group");
 const ChatRoomModel = require("../models/chatroom");
 const ServiceModel = require("../models/service");
-const { v4: uuidv4 } = require("uuid");
-const pdf = require("html-pdf");
-const ejs = require("ejs");
-const path = require("path");
+const PaymentInvoiceService = require("../notification/payment_invoice");
+
 const { BuildHttpResponse } = require("../utils/response");
 const { sendEmailWithBrevo } = require("../notification/brevo");
-const Flutterwave = require("../utils/flutterwave");
-const PaymentModel = require("../models/payment");
 
 const generateGroupCode = async () => {
   let code;
@@ -18,49 +14,6 @@ const generateGroupCode = async () => {
     existingGroup = await GroupModel.findbyGroupCode(code);
   } while (existingGroup);
   return code;
-};
-
-const generateInvoice = async (group, user) => {
-  const templatePath = path.join(__dirname, "../templates/invoice.ejs");
-  const cost = group.totalCost / group.members?.length;
-  const amount = group.handlingFee + cost;
-  const service = await ServiceModel.findById(group.service);
-
-  const resp = await Flutterwave.getUrl({
-    user_id: user._id,
-    email: user.email,
-    name: user.username,
-    transaction_reference: uuidv4(),
-    amount: amount,
-    currency: service.currency,
-    redirect_url: `${process.env?.APP_URL}/api/verify-payment`,
-  });
-
-  if (!resp.status) throw new Error("error generating payment link");
-  console.log("88888888888888888, succeded");
-
-  await PaymentModel.createPayment({
-    reference: resp.reference,
-    userId: user._id,
-    groupId: group._id,
-    amount,
-    currency: service.currency,
-  });
-  const html = await ejs.renderFile(templatePath, {
-    group,
-    user,
-    cost,
-    amount,
-    payment_link: resp.payment_link,
-  });
-
-  const pdfOptions = { format: "Letter" };
-  return new Promise((resolve, reject) => {
-    pdf.create(html, pdfOptions).toBuffer((err, buffer) => {
-      if (err) return reject(err);
-      resolve(buffer);
-    });
-  });
 };
 
 exports.activateGroup = async (req, res) => {
@@ -101,22 +54,7 @@ exports.activateGroup = async (req, res) => {
 
     // Generate invoices for all members including admin
 
-    const invoices = await Promise.all(
-      group.members.map(async (member) => {
-        const user = member.user;
-        const buffer = await generateInvoice(group, user);
-        sendEmailWithBrevo({
-          subject: `${group.groupName} - ${group.planName} invoice`,
-          htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
-          to: [{ email: user.email }],
-          attachments: [{ name: "invoice.pdf", buffer: buffer }],
-        });
-        return {
-          user,
-          buffer,
-        };
-      })
-    );
+    await PaymentInvoiceService.sendToGroup({ group });
 
     // TODO: cleanup - removing this for now since admin is a member now
     // Also generate invoice for admin

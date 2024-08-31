@@ -3,6 +3,7 @@ const Server = require("./middleware/index.js");
 const Router = require("./routes/index.js");
 const processQueueManager = require("./processQueue");
 const NotificationService = require("./notification/index");
+const PaymentInvoiceService = require("./notification/payment_invoice");
 
 require("dotenv").config();
 
@@ -18,6 +19,7 @@ mongoose
       console.log("process handler works");
     },
     notificationEvent: NotificationService.handleNotificationProcess,
+    paymentInvoiceEvent: PaymentInvoiceService.handleSendInvoiceProcess,
   };
   await processQueueManager.initProcessQueue(handlers);
   const processQueue = processQueueManager.getProcessQueue();

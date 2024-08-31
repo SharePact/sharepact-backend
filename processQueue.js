@@ -13,6 +13,17 @@ class ProcessQueueManager {
         host: process.env.REDIS_HOST,
         password: process.env.REDIS_PASSWORD ?? "",
       },
+      defaultJobOptions: {
+        attempts: 10,
+      },
+      settings: {
+        retryProcessDelay: 5000,
+        backoffStrategies: {
+          jitter: function (attemptsMade, err) {
+            return 30000 * (Math.random() * 10 * attemptsMade);
+          },
+        },
+      },
     });
 
     this.processQueue.process(async (job, done) => {
@@ -24,6 +35,12 @@ class ProcessQueueManager {
             if (!notificationEventHandler)
               return done(new Error(`handler for event ${event} not found`));
             await notificationEventHandler(job.data);
+            break;
+          case "paymentInvoiceEvent":
+            const paymentInvoiceEventHandler = this.handlers[event];
+            if (!paymentInvoiceEventHandler)
+              return done(new Error(`handler for event ${event} not found`));
+            await paymentInvoiceEventHandler(job.data);
             break;
           case "testEvent":
             const testEventHandler = this.handlers[event];

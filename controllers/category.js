@@ -57,7 +57,7 @@ exports.getCategoryById = async (req, res) => {
     if (!category)
       return BuildHttpResponse(res, 404, "Category not found", category);
 
-    const services = await Service.find({ categoryId: id });
+    const services = await Service.find({ categoryId: category._id });
     return BuildHttpResponse(res, 200, "successful", { category, services });
   } catch (err) {
     return BuildHttpResponse(res, 500, err.message);
