@@ -7,6 +7,7 @@ const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const pdf = require("html-pdf");
 const processQueueManager = require("../processQueue");
+const GroupModel = require("../models/group");
 
 class PaymentInvoiceService {
   static async sendToGroup({ group }) {
@@ -75,7 +76,8 @@ class PaymentInvoiceService {
   }
 
   static async handleSendInvoiceProcess(data) {
-    const { group, user } = data;
+    const { group: groupInfo, user } = data;
+    const group = await GroupModel.findById(groupInfo._id);
     const buffer = await PaymentInvoiceService.generateInvoice(group, user);
     sendEmailWithBrevo({
       subject: `${group.groupName} - ${group.planName} invoice`,
