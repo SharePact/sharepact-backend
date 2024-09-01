@@ -15,6 +15,12 @@ const PaymentSchema = new Schema(
       enum: ["pending", "successful", "failed"],
       default: "pending",
     },
+    disbursed: {
+      type: String,
+      enum: ["not-disbursed", "pending", "successful", "failed"],
+      default: "not-disbursed",
+    },
+    disbursementId: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
   {
@@ -48,6 +54,25 @@ const PaymentSchema = new Schema(
           { new: true }
         );
       },
+      async getPaymentsGroupedByDisbursementId(limit = 100) {
+        return await this.aggregate([
+          {
+            $match: {
+              disbursed: "pending",
+              disbursementId: { $ne: "" },
+            },
+          },
+          {
+            $group: {
+              _id: "$disbursementId",
+              payments: { $push: "$$ROOT" },
+            },
+          },
+          {
+            $limit: limit,
+          },
+        ]);
+      },
     },
     methods: {
       async updatePaymentReference(newReference) {
@@ -56,6 +81,15 @@ const PaymentSchema = new Schema(
       },
       async updateStatus(status) {
         this.status = status;
+        return await this.save();
+      },
+      async updateDisbursedStatus(status) {
+        this.disbursed = status;
+        return await this.save();
+      },
+      async updateDisbursedStatusAndId(id, status) {
+        this.disbursementId = id;
+        this.disbursed = status;
         return await this.save();
       },
     },

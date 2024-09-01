@@ -4,7 +4,6 @@ const ServiceModel = require("../models/service");
 const PaymentInvoiceService = require("../notification/payment_invoice");
 
 const { BuildHttpResponse } = require("../utils/response");
-const { sendEmailWithBrevo } = require("../notification/brevo");
 
 const generateGroupCode = async () => {
   let code;
@@ -50,30 +49,10 @@ exports.activateGroup = async (req, res) => {
     ); // 30 days from now
     // TODO: Get subscription duration from service
 
+    // Generate invoices for all members including admin
+    await PaymentInvoiceService.sendToGroup({ group });
     await group.save();
 
-    // Generate invoices for all members including admin
-
-    await PaymentInvoiceService.sendToGroup({ group });
-
-    // TODO: cleanup - removing this for now since admin is a member now
-    // Also generate invoice for admin
-    // const adminBuffer = await generateInvoice(group, group.admin);
-    // sendEmailWithBrevo({
-    //   subject: `${group.groupName} - ${group.planName} invoice`,
-    //   htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
-    //   to: [{ email: group.admin.email }],
-    //   attachments: [{ name: "invoice.pdf", buffer: adminBuffer }],
-    // });
-    // console.log(33, group.admin._id);
-
-    // Send the invoices as a response for testing purposes
-    // res.setHeader("Content-Type", "application/pdf");
-    // res.setHeader(
-    //   "Content-Disposition",
-    //   `attachment; filename=invoice-${group.groupCode}.pdf`
-    // );
-    // res.send(adminBuffer);
     return BuildHttpResponse(res, 200, "invoices sent");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
@@ -431,8 +410,8 @@ exports.leaveGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
     const group = await GroupModel.findById(groupId).populate(
-      "joinRequests.user",
-      "username avatarUrl"
+      "admin",
+      "username avatarUrl email"
     );
 
     if (!group) {
@@ -444,6 +423,16 @@ exports.leaveGroup = async (req, res) => {
     }
 
     await group.removeMember(req.user._id);
+
+    await NotificationService.sendNotification({
+      type: "memberRemovalUpdateForCreator",
+      userId: group.admin._id,
+      to: [group.admin.email],
+      textContent: `Your member ${user.username} has left your group ${group.groupName}`,
+      username: group.admin.username,
+      groupName: group.groupName,
+      content: `Your member ${user.username} has left your group ${group.groupName}`,
+    });
 
     return BuildHttpResponse(res, 200, "successfully left group");
   } catch (error) {

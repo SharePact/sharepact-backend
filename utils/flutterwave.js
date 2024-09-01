@@ -176,6 +176,7 @@ class Flutterwave {
       if (response.data.status === "success") {
         return {
           status: response.data.data.status == "SUCCESSFUL",
+          statusString: response.data.data.status,
           message: response.data.message,
           id: response.data.data.id,
           meta: response.data.data.meta,

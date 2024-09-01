@@ -140,6 +140,7 @@ exports.verifyPayment = async (req, res) => {
     const pResponse = await Flutterwave.verify(transaction_id);
     if (pResponse.status) {
       await group.updateMemberSubscriptionStatus(payment.user, "active");
+      await group.updateMemberPaymentActiveState(user._id, true);
       await payment.updateStatus("successful");
     } else {
       await payment.updateStatus("failed");

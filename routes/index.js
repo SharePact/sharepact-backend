@@ -7,6 +7,7 @@ const bankDetailsRoutes = require("./bankdetails");
 const groupRoutes = require("./group");
 const chatRoutes = require("./chat");
 const contactSupportRoutes = require("./support");
+const cronjobRoutes = require("./cronjob");
 const getPaginationParams = require("../middleware/paginationParams");
 const { BuildHttpResponse } = require("../utils/response");
 const { requestLogger } = require("../middleware/logger");
@@ -34,6 +35,7 @@ class Router {
     baseRouter.use("/api/groups", groupRoutes);
     baseRouter.use("/api/chat", chatRoutes);
     baseRouter.use("/api/support", contactSupportRoutes);
+    baseRouter.use("/jobs", cronjobRoutes);
 
     this.router.use("/", requestLogger, getPaginationParams, baseRouter);
     // this.router.use((req, res, next) => {
