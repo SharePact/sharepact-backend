@@ -12,6 +12,13 @@ router.patch(
   ZodMiddleware(updateNotificationConfigSchema),
   profileController.UpdateNotificationConfig
 );
+router.get(
+  "/notification-config",
+  checkAuth,
+  ZodMiddleware(updateNotificationConfigSchema),
+  profileController.getNotificationConfig
+);
+
 router.get("/avatars", checkAuth, profileController.getAllAvatars); // Add this line
 router.put("/update-avatar", checkAuth, profileController.updateAvatar);
 router.put(
