@@ -201,6 +201,24 @@ class Flutterwave {
       };
     }
   }
+
+  static async getBanks(countryCode = "NG") {
+    const url = `${baseUrl}/v3/banks/${countryCode}`;
+    const headers = {
+      Authorization: `Bearer ${secKey}`,
+    };
+
+    try {
+      const response = await axios.get(url, { headers });
+      if (response.data.status === "success") {
+        return response.data.data;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      return [];
+    }
+  }
 }
 
 // sample init transfer response
