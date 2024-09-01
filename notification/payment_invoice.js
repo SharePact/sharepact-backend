@@ -54,6 +54,7 @@ class PaymentInvoiceService {
       userId: user._id,
       groupId: group._id,
       amount,
+      disbursed: false,
       currency: service.currency,
     });
     const html = await ejs.renderFile(templatePath, {
@@ -82,6 +83,8 @@ class PaymentInvoiceService {
       to: [{ email: user.email }],
       attachments: [{ name: "invoice.pdf", buffer: buffer }],
     });
+    await group.updateMemberPaymentActiveState(user._id, false);
+    await group.updateMemberlastInvoiceSentAt(user._id, Date.now());
   }
 }
 

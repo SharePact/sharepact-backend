@@ -1,0 +1,191 @@
+const GroupModel = require("../models/group");
+const NotificationService = require("../notification/index");
+const { BuildHttpResponse } = require("../utils/response");
+const PaymentInvoiceService = require("../notification/payment_invoice");
+const Flutterwave = require("../utils/flutterwave");
+const BankDetails = require("../models/bankdetails");
+const PaymentModel = require("../models/payment");
+const { v4: uuidv4 } = require("uuid");
+// const pMap = require("p-map");
+// import pMap from "p-map";
+let pMap;
+(async () => {
+  pMap = (await import("p-map")).default;
+  // Your code here
+})();
+console.log({ pMap });
+
+exports.recurringInvoices = async (req, res) => {
+  try {
+    const groups = await GroupModel.findGroupsWithUpcomingSubscriptionDates();
+
+    await pMap(
+      groups,
+      async (group) => {
+        console.log({ group });
+        group.activated = true;
+        group.nextSubscriptionDate = new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        );
+        await PaymentInvoiceService.sendToGroup({ group });
+        await group.save();
+      },
+      { concurrency: 100 }
+    );
+    return BuildHttpResponse(res, 200, "success");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+exports.checkMembersPayments = async (req, res) => {
+  try {
+    const groups = await GroupModel.findGroupsWithInactiveMembers();
+    await pMap(
+      groups,
+      async (group) => {
+        const inactiveMembers = await group.findInactiveMembers();
+        for (const inactiveMember of inactiveMembers) {
+          await group.removeMember(inactiveMember.user._id);
+          await NotificationService.sendNotification({
+            type: "removalFromSubscriptionGroup",
+            userId: inactiveMember.user._id,
+            to: [inactiveMember.user.email],
+            textContent: `You have been removed from ${group.groupName}`,
+            username: inactiveMember.username,
+            groupName: group.groupName,
+          });
+
+          await NotificationService.sendNotification({
+            type: "memberRemovalUpdateForCreator",
+            userId: group.admin._id,
+            to: [group.admin.email],
+            textContent: `Your member ${inactiveMember.username} has been removed from ${group.groupName}`,
+            username: group.admin.username,
+            groupName: group.groupName,
+            content: `Your member ${inactiveMember.username} has been removed from ${group.groupName}`,
+          });
+        }
+      },
+      { concurrency: 100 }
+    );
+    return BuildHttpResponse(res, 200, "success");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+exports.paymentReminderForInactiveMembers = async (req, res) => {
+  try {
+    const groups = await GroupModel.findGroupsWithInvoiceSentExactly24HrsAgo();
+    await pMap(
+      groups,
+      async (group) => {
+        const inactiveMembers = await group.findInactiveMembers();
+        for (const inactiveMember of inactiveMembers) {
+          await NotificationService.sendNotification({
+            type: "paymentReminder",
+            userId: inactiveMember.user._id,
+            to: [inactiveMember.user.email],
+            textContent: `Your subscription payment deadline is in 24hrs`,
+            username: inactiveMember.user.username,
+            groupName: group.groupName,
+          });
+          await NotificationService.sendNotification({
+            type: "memberPaymentReminderForCreator",
+            userId: group.admin._id,
+            to: [group.admin.email],
+            textContent: `Your member ${inactiveMember.username} from ${group.groupName} has there subscription payment deadline in 24hrs`,
+            username: group.admin.username,
+            groupName: group.groupName,
+            memberUsername: inactiveMember.username,
+          });
+        }
+      },
+      { concurrency: 100 }
+    );
+    return BuildHttpResponse(res, 200, "success");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.groupCreatorDisbursement = async (req, res) => {
+  try {
+    const groups =
+      await GroupModel.findActivatedGroupsWithValidMembersAndPayments();
+    groups.map(async (group) => {
+      const bankDetails = await BankDetails.getByUserId(group.admin._id);
+      if (!bankDetails) {
+        console.log(`no bank details found`);
+        return;
+      }
+
+      const payments = group.payments;
+      if (payments?.length <= 0) return;
+
+      let totalAmout = 0;
+      for (const payment of payments) {
+        totalAmout += payment.amount;
+      }
+
+      const dResponse = await Flutterwave.initTransfer({
+        groupCreatorId: group.admin._id,
+        bankCode: bankDetails.sortCode,
+        accountNumber: bankDetails.accountNumber,
+        amount: totalAmout,
+        currency: payments[0]?.currency,
+        reference: uuidv4(),
+        narration: `disbursement for subscription from group ${group.groupName}`,
+      });
+
+      if (dResponse == true) {
+        await pMap(
+          payments,
+          async (payment) => {
+            await payment.updateDisbursedStatusAndId(dResponse.id, "pending");
+          },
+          { concurrency: 10 }
+        );
+      }
+    });
+
+    return BuildHttpResponse(res, 200, "success");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.verifyPendingDisbursements = async (req, res) => {
+  try {
+    const disbursements =
+      await PaymentModel.getPaymentsGroupedByDisbursementId();
+
+    disbursements.map(async (disbursement) => {
+      const disbursementId = disbursement._id;
+      const dResponse = await Flutterwave.fetchTransfer(disbursementId);
+      if (dResponse.status == true) {
+        await pMap(
+          payments,
+          async (payment) => {
+            await payment.updateDisbursedStatus("successful");
+          },
+          { concurrency: 10 }
+        );
+      } else if (
+        dResponse?.statusString &&
+        dResponse?.statusStringtoLowerCase() == "failed"
+      ) {
+        await pMap(
+          payments,
+          async (payment) => {
+            await payment.updateDisbursedStatusAndId("", "not-disbursed");
+          },
+          { concurrency: 10 }
+        );
+      }
+    });
+
+    return BuildHttpResponse(res, 200, "success");
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};

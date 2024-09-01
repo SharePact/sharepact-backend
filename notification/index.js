@@ -27,6 +27,10 @@ class NotificationService {
       loginAlert: "loginAlert.ejs",
       passwordChangeAlert: "passwordChangeAlert.ejs",
       emailVerificationSuccessful: "emailVerificationSuccessful.ejs",
+      removalFromSubscriptionGroup: "removalFromSubscriptionGroup.ejs",
+      memberRemovalUpdateForCreator: "memberRemovalUpdateForCreator.ejs",
+      paymentReminder: "paymentReminder.ejs",
+      memberPaymentReminderForCreator: "memberPaymentReminderForCreator.ejs",
     };
 
     const templateFile = templates[type];
@@ -73,6 +77,10 @@ class NotificationService {
       loginAlert: "Login Notification",
       passwordChangeAlert: "Password Change Notification",
       emailVerificationSuccessful: "Email Verified Successfully",
+      removalFromSubscriptionGroup: "Removal From Subscription Group",
+      memberRemovalUpdateForCreator: "Member has left Group",
+      paymentReminder: "Reminder to make payment",
+      memberPaymentReminderForCreator: "Member Reminder to make payment",
     };
     return subjects[type] || "";
   }

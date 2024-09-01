@@ -3,10 +3,14 @@ const Schema = mongoose.Schema;
 const { getPaginatedResults } = require("../utils/pagination");
 const ServiceModel = require("../models/service");
 
+const paymentDeadline = 48;
+const upcomingDeadline = 5 * 24;
 const MemberSchema = new Schema({
   user: { type: mongoose.Types.ObjectId, ref: "User", index: true },
   subscriptionStatus: { type: String, default: "inactive" },
   confirmStatus: { type: Boolean, default: false },
+  paymentActive: { type: Boolean, default: false },
+  lastInvoiceSentAt: { type: Date },
 });
 const modelName = "Group";
 
@@ -76,6 +80,26 @@ const GroupSchema = new Schema(
         );
         if (member) {
           member.confirmStatus = confirmStatus;
+          await this.save();
+        }
+        return this;
+      },
+      async updateMemberPaymentActiveState(userId, status = false) {
+        const member = this.members.find(
+          (member) => member.user.toString() === userId.toString()
+        );
+        if (member) {
+          member.paymentActive = status;
+          await this.save();
+        }
+        return this;
+      },
+      async updateMemberlastInvoiceSentAt(userId, dateTime = Date.now()) {
+        const member = this.members.find(
+          (member) => member.user.toString() === userId.toString()
+        );
+        if (member) {
+          member.lastInvoiceSentAt = dateTime;
           await this.save();
         }
         return this;
@@ -180,6 +204,39 @@ const GroupSchema = new Schema(
           }));
         }
         return groupDetails;
+      },
+      async removeInactiveMembers() {
+        const now = new Date();
+        const deadline = new Date(
+          now.getTime() - paymentDeadline * 60 * 60 * 1000
+        );
+
+        this.members = this.members.filter(
+          (member) =>
+            !(
+              member.paymentActive === false &&
+              member.lastInvoiceSentAt &&
+              member.lastInvoiceSentAt < deadline &&
+              !member.user.equals(this.admin)
+            )
+        );
+        await this.save();
+        return this;
+      },
+      async findInactiveMembers() {
+        const now = new Date();
+        const deadline = new Date(
+          now.getTime() - paymentDeadline * 60 * 60 * 1000
+        );
+
+        const inactivemembers = this.members.filter(
+          (member) =>
+            member.paymentActive === false &&
+            member.lastInvoiceSentAt &&
+            member.lastInvoiceSentAt < deadline &&
+            !member.user.equals(this.admin)
+        );
+        return inactivemembers;
       },
     },
     statics: {
@@ -297,6 +354,165 @@ const GroupSchema = new Schema(
           { _id: groupId, "members.user": userId },
           { $set: { "members.$.confirmStatus": confirmStatus } }
         );
+      },
+      async findGroupsWithInvoiceSentExactly24HrsAgo() {
+        const now = new Date();
+        const lowerBound = new Date(
+          now.getTime() - 24 * 60 * 60 * 1000 - 2 * 60 * 1000
+        ); // 24 hours ago - 2 minutes
+        const upperBound = new Date(
+          now.getTime() - 24 * 60 * 60 * 1000 + 2 * 60 * 1000
+        ); // 24 hours ago + 2 minutes
+
+        return await this.find({
+          members: {
+            $elemMatch: {
+              paymentActive: false,
+              lastInvoiceSentAt: { $gte: lowerBound, $lte: upperBound },
+              user: { $ne: this.admin },
+            },
+          },
+        })
+          .populate({
+            path: "members.user",
+            select: "username email",
+          })
+          .populate("admin", "username email");
+      },
+      async findGroupsWithInactiveMembers(
+        deadlineInHrs = paymentDeadline,
+        limit = 1000
+      ) {
+        const now = new Date();
+        const deadline = new Date(
+          now.getTime() - deadlineInHrs * 60 * 60 * 1000
+        );
+
+        return await this.find({
+          members: {
+            $elemMatch: {
+              paymentActive: false,
+              lastInvoiceSentAt: { $lt: deadline },
+              user: { $ne: this.admin },
+            },
+          },
+        })
+          .limit(limit)
+          .populate({
+            path: "members.user",
+            select: "username email",
+          })
+          .populate("admin", "username email");
+      },
+      async removeInactiveMembers() {
+        const oneDayAgo = new Date(
+          Date.now() - paymentDeadline * 60 * 60 * 1000
+        );
+        return this.updateMany(
+          {},
+          {
+            $pull: {
+              members: {
+                $and: [
+                  { paymentActive: false },
+                  { lastInvoiceSentAt: { $lte: oneDayAgo } },
+                  { $expr: { $ne: ["$user", "$$CURRENT.admin"] } },
+                ],
+              },
+            },
+          }
+        );
+      },
+      async findGroupsWithUpcomingSubscriptionDates(limit = 1000) {
+        const now = new Date();
+        const upcomingDate = new Date(
+          now.getTime() + upcomingDeadline * 60 * 60 * 1000
+        );
+
+        return await this.find({
+          nextSubscriptionDate: { $lte: upcomingDate },
+        })
+          .limit(limit)
+          .populate("admin", "username email")
+          .populate({
+            path: "members.user",
+            select: "username email",
+          });
+      },
+      async findActivatedGroupsWithValidMembersAndPayments(limit = 400) {
+        return await this.aggregate([
+          // Match groups where activated is true
+          {
+            $match: {
+              activated: true,
+            },
+          },
+          // Lookup payments for these groups
+          {
+            $lookup: {
+              from: "payments", // The name of the Payments collection
+              localField: "_id",
+              foreignField: "group",
+              as: "payments",
+            },
+          },
+          // Filter payments where disbursed=false and status=successful
+          {
+            $addFields: {
+              payments: {
+                $filter: {
+                  input: "$payments",
+                  as: "payment",
+                  cond: {
+                    $and: [
+                      { $eq: ["$$payment.disbursed", "not-disbursed"] },
+                      { $eq: ["$$payment.status", "successful"] },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          // Match groups where all members have confirmStatus and paymentActive as true
+          {
+            $addFields: {
+              allMembersValid: {
+                $allElementsTrue: [
+                  {
+                    $map: {
+                      input: "$members",
+                      as: "member",
+                      in: {
+                        $and: [
+                          { $eq: ["$$member.confirmStatus", true] },
+                          { $eq: ["$$member.paymentActive", true] },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $match: {
+              allMembersValid: true,
+            },
+          },
+          // Optionally project fields if needed
+          {
+            $project: {
+              groupName: 1,
+              planName: 1,
+              members: 1,
+              payments: 1,
+              "admin.email": 1,
+            },
+          },
+          {
+            $limit: limit,
+          },
+        ]);
       },
     },
   }
