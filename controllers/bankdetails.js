@@ -1,5 +1,5 @@
 const BankDetails = require("../models/bankdetails");
-const axios = require('axios'); 
+const axios = require("axios");
 const PaymentModel = require("../models/payment");
 const { BuildHttpResponse } = require("../utils/response");
 const GroupModel = require("../models/group");
@@ -164,20 +164,15 @@ exports.verifyPayment = async (req, res) => {
   }
 };
 
-
 exports.getBanks = async (req, res) => {
   try {
-    const response = await axios.get('https://api.flutterwave.com/v3/banks/NG', {
-      headers: {
-        'Authorization': `Bearer ${process.env.FLUTTERWAVE_SEC_KEY}`,
-      },
-    });
-
-    if (response.status === 200) {
-      return BuildHttpResponse(res, 200, "Banks retrieved successfully", response.data.data);
-    } else {
-      return BuildHttpResponse(res, response.status, response.statusText);
-    }
+    const response = await Flutterwave.getBanks();
+    return BuildHttpResponse(
+      res,
+      200,
+      "Banks retrieved successfully",
+      response
+    );
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
