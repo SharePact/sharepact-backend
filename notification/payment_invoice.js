@@ -33,7 +33,7 @@ class PaymentInvoiceService {
 
   static async generateInvoice(group, user) {
     const templatePath = path.join(__dirname, "../templates/invoice.ejs");
-    const cost = group.totalCost / group.members?.length;
+    const cost = group.subscriptionCost / group.members?.length;
     const amount = group.handlingFee + cost;
     const service = await ServiceModel.findById(group.service);
 

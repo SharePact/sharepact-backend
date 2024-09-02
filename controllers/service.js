@@ -9,7 +9,7 @@ exports.createService = async (req, res) => {
     const {
       serviceName,
       serviceDescription,
-      subscriptionPlans,
+      // subscriptionPlans,
       currency,
       handlingFees,
       categoryId,
@@ -18,7 +18,7 @@ exports.createService = async (req, res) => {
     if (
       !serviceName ||
       !serviceDescription ||
-      !subscriptionPlans ||
+      // !subscriptionPlans ||
       !currency ||
       !categoryId
     ) {
@@ -45,7 +45,7 @@ exports.createService = async (req, res) => {
     const service = await Service.createService({
       serviceName,
       serviceDescription,
-      subscriptionPlans,
+      // subscriptionPlans,
       currency,
       handlingFees,
       logoUrl,
@@ -109,7 +109,7 @@ exports.updateService = async (req, res) => {
     const {
       serviceName,
       serviceDescription,
-      subscriptionPlans,
+      // subscriptionPlans,
       currency,
       handlingFees,
       categoryId,
@@ -134,7 +134,7 @@ exports.updateService = async (req, res) => {
     await service.updateService({
       serviceName,
       serviceDescription,
-      subscriptionPlans,
+      // subscriptionPlans,
       currency,
       handlingFees,
       categoryId,

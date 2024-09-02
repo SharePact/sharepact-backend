@@ -12,6 +12,14 @@ router.post(
   ZodMiddleware(createGroupSchema),
   GroupController.createGroup
 );
+// New route for updating subscription cost
+router.patch(
+  "/update-subscription-cost/:groupId",
+  checkAuth,
+  // ZodMiddleware(updateSubscriptionCostSchema),
+  GroupController.updateSubscriptionCost
+);
+
 router.get(
   "/by-service/:service_id",
   checkAuth,

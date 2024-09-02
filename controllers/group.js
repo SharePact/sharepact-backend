@@ -14,7 +14,6 @@ const generateGroupCode = async () => {
   } while (existingGroup);
   return code;
 };
-
 exports.activateGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -44,10 +43,12 @@ exports.activateGroup = async (req, res) => {
     }
 
     group.activated = true;
-    group.nextSubscriptionDate = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
-    ); // 30 days from now
-    // TODO: Get subscription duration from service
+
+    if (!group.oneTimePayment) {
+      group.nextSubscriptionDate = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ); // 30 days from now
+    }
 
     // Generate invoices for all members including admin
     await PaymentInvoiceService.sendToGroup({ group });
@@ -64,8 +65,9 @@ exports.createGroup = async (req, res) => {
     const {
       serviceId,
       groupName,
-      subscriptionPlan,
+      subscriptionCost,
       numberOfMembers,
+      oneTimePayment,
       existingGroup,
       nextSubscriptionDate,
     } = req.body;
@@ -79,28 +81,18 @@ exports.createGroup = async (req, res) => {
       );
     }
 
-    // Fetch service details
     const service = await ServiceModel.findById(serviceId);
     if (!service) {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    // Find the subscription plan in the service
-    const plan = await service.findSubscriptionPlan(subscriptionPlan);
-    if (!plan) {
-      return BuildHttpResponse(res, 404, "Subscription plan not found");
-    }
-
-    const totalMembers = numberOfMembers; // Admin counts as one member already
-    const subscriptionCost = plan.price; // Updated to use 'price' instead of 'cost'
+    const totalMembers = numberOfMembers; 
     const handlingFee = service.handlingFees;
-    const totalCost = subscriptionCost;
     const individualShare = subscriptionCost / totalMembers + handlingFee;
 
     if (
       !subscriptionCost ||
       !handlingFee ||
-      !totalCost ||
       !individualShare ||
       !admin
     ) {
@@ -111,14 +103,11 @@ exports.createGroup = async (req, res) => {
 
     const newGroup = await GroupModel.createGroup({
       service: service._id,
-      planName: plan.planName,
       groupName,
-      subscriptionPlan: plan.planName,
       numberOfMembers: totalMembers,
       subscriptionCost,
       handlingFee,
       individualShare,
-      totalCost,
       groupCode,
       admin,
       members: [
@@ -128,19 +117,55 @@ exports.createGroup = async (req, res) => {
           confirmStatus: false,
         },
       ],
+      oneTimePayment,
       existingGroup,
       activated: existingGroup,
-      nextSubscriptionDate: existingGroup ? nextSubscriptionDate : undefined, // Set nextSubscriptionDate if it's an existing group
-      joinRequests: [], // Initialize joinRequests as an empty array
+      nextSubscriptionDate: oneTimePayment ? undefined : nextSubscriptionDate, // Set nextSubscriptionDate only if oneTimePayment is false
+      joinRequests: [],
     });
 
-    // Create a chat room for the group
     const chatRoom = await ChatRoomModel.createChatRoom({
       groupId: newGroup._id,
       members: [admin],
     });
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.updateSubscriptionCost = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { newSubscriptionCost } = req.body;
+    const userId = req.user._id;
+
+    if (!newSubscriptionCost || isNaN(newSubscriptionCost) || newSubscriptionCost <= 0) {
+      return BuildHttpResponse(res, 400, "Invalid subscription cost");
+    }
+
+    const group = await GroupModel.findById(groupId);
+    if (!group) {
+      return BuildHttpResponse(res, 404, "Group not found");
+    }
+
+    if (group.admin.toString() !== userId.toString()) {
+      return BuildHttpResponse(res, 403, "Only the group admin can update the subscription cost");
+    }
+
+    group.subscriptionCost = newSubscriptionCost;
+    
+    // Recalculate the individual share if needed
+    const service = await ServiceModel.findById(group.service);
+    if (service) {
+      const handlingFee = service.handlingFees;
+      const totalMembers = group.numberOfMembers;
+      group.individualShare = newSubscriptionCost / totalMembers + handlingFee;
+    }
+
+    await group.save();
+    return BuildHttpResponse(res, 200, "Subscription cost updated successfully", group);
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -172,7 +197,7 @@ exports.getGroupsByServiceId = async (req, res) => {
 exports.getGroups = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    let { search, active, subscription_status } = req.query;
+    let { search, active, subscription_status,oneTimePayment } = req.query;
     const userId = req.user._id;
     const groups = await GroupModel.getGroups(
       userId,
@@ -180,7 +205,8 @@ exports.getGroups = async (req, res) => {
       limit,
       search ?? "",
       active ?? null,
-      subscription_status ?? null
+      subscription_status ?? null,
+      oneTimePayment !== undefined ? oneTimePayment : null
     );
     return BuildHttpResponse(
       res,
