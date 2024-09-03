@@ -86,16 +86,11 @@ exports.createGroup = async (req, res) => {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    const totalMembers = numberOfMembers; 
+    const totalMembers = numberOfMembers;
     const handlingFee = service.handlingFees;
     const individualShare = subscriptionCost / totalMembers + handlingFee;
 
-    if (
-      !subscriptionCost ||
-      !handlingFee ||
-      !individualShare ||
-      !admin
-    ) {
+    if (!subscriptionCost || !handlingFee || !individualShare || !admin) {
       throw new Error("Calculation error: missing required fields");
     }
 
@@ -141,7 +136,11 @@ exports.updateSubscriptionCost = async (req, res) => {
     const { newSubscriptionCost } = req.body;
     const userId = req.user._id;
 
-    if (!newSubscriptionCost || isNaN(newSubscriptionCost) || newSubscriptionCost <= 0) {
+    if (
+      !newSubscriptionCost ||
+      isNaN(newSubscriptionCost) ||
+      newSubscriptionCost <= 0
+    ) {
       return BuildHttpResponse(res, 400, "Invalid subscription cost");
     }
 
@@ -151,11 +150,15 @@ exports.updateSubscriptionCost = async (req, res) => {
     }
 
     if (group.admin.toString() !== userId.toString()) {
-      return BuildHttpResponse(res, 403, "Only the group admin can update the subscription cost");
+      return BuildHttpResponse(
+        res,
+        403,
+        "Only the group admin can update the subscription cost"
+      );
     }
 
     group.subscriptionCost = newSubscriptionCost;
-    
+
     // Recalculate the individual share if needed
     const service = await ServiceModel.findById(group.service);
     if (service) {
@@ -165,7 +168,12 @@ exports.updateSubscriptionCost = async (req, res) => {
     }
 
     await group.save();
-    return BuildHttpResponse(res, 200, "Subscription cost updated successfully", group);
+    return BuildHttpResponse(
+      res,
+      200,
+      "Subscription cost updated successfully",
+      group
+    );
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -197,7 +205,7 @@ exports.getGroupsByServiceId = async (req, res) => {
 exports.getGroups = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    let { search, active, subscription_status,oneTimePayment } = req.query;
+    let { search, active, subscription_status, oneTimePayment } = req.query;
     const userId = req.user._id;
     const groups = await GroupModel.getGroups(
       userId,
