@@ -46,6 +46,7 @@ exports.getUnreadMessagesCount = async (req, res) => {
   try {
     const group = await GroupModel.findById(groupId);
     if (!group) return BuildHttpResponse(res, 404, "Group not found");
+    const userId = req.user._id;
 
     if (!(await group.isUserAMember(userId)))
       return BuildHttpResponse(res, 404, "user is not a member of this group");
