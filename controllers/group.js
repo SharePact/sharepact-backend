@@ -363,12 +363,19 @@ exports.getGroupDetails = async (req, res) => {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    const groupDetails = await group.groupDetails(userId, service._id);
+    const groupDetails = {
+      ...group.toObject(),
+      serviceName: service.serviceName,
+      serviceLogo: service.logoUrl,
+      nextSubscriptionDate: group.nextSubscriptionDate,
+    };
+
     return BuildHttpResponse(res, 200, "successful", groupDetails);
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 exports.getGroupDetailsByCode = async (req, res) => {
   try {

@@ -80,8 +80,8 @@ class PaymentInvoiceService {
     const group = await GroupModel.findById(groupInfo._id);
     const buffer = await PaymentInvoiceService.generateInvoice(group, user);
     sendEmailWithBrevo({
-      subject: `${group.groupName} - ${group.planName} invoice`,
-      htmlContent: `<h2>Payment invoice for ${group.groupName} - ${group.planName} <h2>`,
+      subject: `${group.groupName} invoice`,
+      htmlContent: `<h2>Payment invoice for ${group.groupName}  <h2>`,
       to: [{ email: user.email }],
       attachments: [{ name: "invoice.pdf", buffer: buffer }],
     });

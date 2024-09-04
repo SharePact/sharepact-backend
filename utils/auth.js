@@ -29,7 +29,7 @@ const comparePassword = async (password, hashedPassword) => {
 };
 
 // Generate token
-const generateToken = (user, expires = "1h") => {
+const generateToken = (user, expires = "7d") => {
   return jwt.sign(
     { userId: user._id, email: user.email, role: user.role },
     process.env.JWT_SECRET,

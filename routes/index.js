@@ -1,5 +1,6 @@
 const express = require("express");
 const authRoutes = require("./auth");
+const waitlistRoutes = require("./waitlist");
 const categoryRoutes = require("./category");
 const serviceRoutes = require("./service");
 const profileRoutes = require("./profile");
@@ -28,6 +29,7 @@ class Router {
       res.sendFile(path.join(__dirname, "../public", "index.html"));
     });
     baseRouter.use("/auth", authRoutes);
+    baseRouter.use("/api/waitlist", waitlistRoutes);
     baseRouter.use("/api/categories", categoryRoutes);
     baseRouter.use("/api/services", serviceRoutes);
     baseRouter.use("/api/profile", profileRoutes);
