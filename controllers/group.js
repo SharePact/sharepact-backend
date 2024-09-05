@@ -258,35 +258,38 @@ exports.requestToJoinGroup = async (req, res) => {
     const { groupCode, message } = req.body;
     const userId = req.user._id;
 
-    const group = await GroupModel.findbyGroupCode(groupCode);
+    // Find the group by its groupCode
+    const group = await GroupModel.findOne({ groupCode });
     if (!group) {
       return BuildHttpResponse(res, 404, "Group not found");
     }
 
+    // Check if the user is already a member
     if (await group.isUserAMember(userId)) {
-      return BuildHttpResponse(
-        res,
-        400,
-        "You are already a member of this group"
-      );
+      return BuildHttpResponse(res, 400, "You are already a member of this group");
     }
 
-    if (group?.members?.length >= group?.numberOfMembers) {
+    // Check if the group is full
+    if (group.members.length >= group.numberOfMembers) {
       return BuildHttpResponse(res, 400, "Group is full");
     }
 
-    // Add join request to the group
-    await group.addJoinRequest({ userId, message });
+    // Check if the user already has a pending join request
+    const existingRequest = group.joinRequests.find(request => request.user.toString() === userId.toString());
+    if (existingRequest) {
+      return BuildHttpResponse(res, 400, "You already have a pending request. Please wait for the admin to accept you.");
+    }
 
-    return BuildHttpResponse(
-      res,
-      200,
-      "Request to join group sent successfully"
-    );
+    // Add join request to the group
+    group.joinRequests.push({ user: userId, message });
+    await group.save();
+
+    return BuildHttpResponse(res, 200, "Request to join group sent successfully");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 exports.handleJoinRequest = async (req, res) => {
   try {
@@ -346,6 +349,7 @@ exports.getGroupDetails = async (req, res) => {
     const { groupId } = req.params;
     const userId = req.user._id;
 
+    // Find the group and populate the necessary fields
     const group = await GroupModel.findById(groupId)
       .populate("admin", "username avatarUrl")
       .populate({
@@ -357,24 +361,34 @@ exports.getGroupDetails = async (req, res) => {
       return BuildHttpResponse(res, 404, "Group not found");
     }
 
+    // Find the associated service
     const service = await ServiceModel.findById(group.service);
 
     if (!service) {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
+    // Build the group details object
     const groupDetails = {
       ...group.toObject(),
       serviceName: service.serviceName,
+      serviceDescription: service.serviceDescription,
       serviceLogo: service.logoUrl,
       nextSubscriptionDate: group.nextSubscriptionDate,
     };
+
+    // Check if the requesting user is the admin
+    if (group.admin._id.toString() !== userId.toString()) {
+      // If not the admin, remove the joinRequests field from the response
+      delete groupDetails.joinRequests;
+    }
 
     return BuildHttpResponse(res, 200, "successful", groupDetails);
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 
 exports.getGroupDetailsByCode = async (req, res) => {
