@@ -1,6 +1,6 @@
 const express = require("express");
 const GroupController = require("../controllers/group");
-const { checkAuth } = require("../middleware/checkauth");
+const { checkAuth } = require("../middleware/checkAuth");
 const { createGroupSchema } = require("../zodSchemas/index");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 
@@ -24,6 +24,11 @@ router.get(
   "/by-service/:service_id",
   checkAuth,
   GroupController.getGroupsByServiceId
+);
+router.get(
+  "/grouplist",
+  checkAuth,
+  GroupController.getGroupsList
 );
 router.get("/", checkAuth, GroupController.getGroups);
 router.post("/join", checkAuth, GroupController.requestToJoinGroup);

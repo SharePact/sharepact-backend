@@ -1,8 +1,9 @@
 const GroupModel = require("../models/group");
 const ChatRoomModel = require("../models/chatroom");
 const ServiceModel = require("../models/service");
+const Message = require("../models/message"); 
 const PaymentInvoiceService = require("../notification/payment_invoice");
-
+const NotificationService = require("../notification/index");
 const { BuildHttpResponse } = require("../utils/response");
 
 const generateGroupCode = async () => {
@@ -402,7 +403,44 @@ exports.getGroupDetails = async (req, res) => {
   }
 };
 
+exports.getGroupsList = async (req, res) => {
+  const { page, limit } = req.pagination;
+  try {
+    const userId = req.user._id;
 
+    // Fetch groups that the user belongs to
+    const groups = await GroupModel.getGroups(
+      userId,
+      page,
+      limit
+    );
+
+    // Fetch latest message and unread count for each group
+    const groupsWithDetails = await Promise.all(groups.results.map(async (group) => {
+      const unreadMessages = await Message.getUnreadMessagesCountByGroup(userId, group._id);
+      const latestMessage = await Message.getLatestMessageByGroup(group._id);
+
+      return {
+        ...group.toObject(),
+        unreadMessages,
+        latestMessage,
+        latestMessageTime: latestMessage ? latestMessage.createdAt : null
+      };
+    }));
+
+    // Sort groups by the latest message timestamp, newest first
+    const sortedGroups = groupsWithDetails.sort((a, b) => {
+      return new Date(b.latestMessageTime) - new Date(a.latestMessageTime);
+    });
+
+    return BuildHttpResponse(res, 200, "Groups fetched successfully", {
+      groups: sortedGroups,
+      pagination: groups.pagination
+    });
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
 
 
 exports.getGroupDetailsByCode = async (req, res) => {
