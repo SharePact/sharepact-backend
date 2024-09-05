@@ -38,11 +38,11 @@ exports.activateGroup = async (req, res) => {
       );
     }
 
-    if (group.activated) {
-      return BuildHttpResponse(res, 400, "Group is already activated");
-    }
+    // if (group.activated) {
+    //   return BuildHttpResponse(res, 400, "Group is already activated");
+    // }
 
-    group.activated = true;
+    // group.activated = true;
 
     if (!group.oneTimePayment) {
       group.nextSubscriptionDate = new Date(

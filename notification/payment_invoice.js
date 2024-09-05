@@ -5,7 +5,7 @@ const { sendEmailWithBrevo } = require("./brevo");
 const ejs = require("ejs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
-const pdf = require("html-pdf");
+const puppeteer = require("puppeteer");
 const processQueueManager = require("../processQueue");
 const GroupModel = require("../models/group");
 
@@ -66,13 +66,20 @@ class PaymentInvoiceService {
       payment_link: resp.payment_link,
     });
 
-    const pdfOptions = { format: "Letter" };
-    return new Promise((resolve, reject) => {
-      pdf.create(html, pdfOptions).toBuffer((err, buffer) => {
-        if (err) return reject(err);
-        resolve(buffer);
-      });
-    });
+    // Use Puppeteer to generate the PDF
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    // Set the content for the page
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
+    // Generate the PDF
+    const pdfBuffer = await page.pdf({ format: "Letter" });
+    // Close the browser after generating the PDF
+    await browser.close();
+
+    const dataBuffer = Buffer.from(pdfBuffer);
+    return dataBuffer;
   }
 
   static async handleSendInvoiceProcess(data) {
