@@ -355,6 +355,10 @@ exports.getGroupDetails = async (req, res) => {
       .populate({
         path: "members.user",
         select: "username avatarUrl",
+      })
+      .populate({
+        path: "joinRequests.user",
+        select: "username avatarUrl",
       });
 
     if (!group) {
@@ -368,13 +372,22 @@ exports.getGroupDetails = async (req, res) => {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    // Build the group details object
+    // Build the group details object, with joinRequests now having user details
     const groupDetails = {
       ...group.toObject(),
       serviceName: service.serviceName,
       serviceDescription: service.serviceDescription,
       serviceLogo: service.logoUrl,
       nextSubscriptionDate: group.nextSubscriptionDate,
+      joinRequests: group.joinRequests.map(request => ({
+        user: {
+          _id: request.user._id,
+          username: request.user.username,
+          avatarUrl: request.user.avatarUrl,
+        },
+        message: request.message,
+        _id: request._id,
+      }))
     };
 
     // Check if the requesting user is the admin
@@ -388,6 +401,7 @@ exports.getGroupDetails = async (req, res) => {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 
 

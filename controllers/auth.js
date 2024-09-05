@@ -2,7 +2,7 @@ const UserModel = require("../models/user");
 const { BuildHttpResponse } = require("../utils/response");
 const AuthTokenModel = require("../models/authToken");
 const OTPModel = require("../models/otp");
-const { getUserFromToken } = require("../middleware/checkauth");
+const { getUserFromToken } = require("../middleware/checkAuth");
 
 const NotificationService = require("../notification/index");
 const {
