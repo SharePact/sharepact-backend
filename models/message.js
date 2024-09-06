@@ -57,7 +57,7 @@ const MessageSchema = new Schema(
           .find(query)
           .sort({ _id: -1 }) // Sorting by _id in descending order for cursor-based pagination
           .limit(limit)
-          .populate("sender", "username email")
+          .populate("sender", "username email avatarUrl")
           .exec();
 
         return {

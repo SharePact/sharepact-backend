@@ -60,22 +60,40 @@ class Messaging {
       });
 
       // Broadcast a message to a specific room when received
-      socket.on(
-        "send-message",
-        async ({ room, msg: content, reply = null }) => {
-          console.log(
-            `received message in room ${room} from ${socket.user._id}: ${content}`
-          );
-          const msg = await Message.createMessage({
-            content,
-            sender: socket.user._id,
-            group: room,
-            reply,
-          });
+     // In your setupSocketHandlers function
 
-          this.io.to(room).emit("chat-message", { msg, user: socket.user });
-        }
-      );
+socket.on(
+  "send-message",
+  async ({ room, msg: content, reply = null }) => {
+    console.log(
+      `received message in room ${room} from ${socket.user._id}: ${content}`
+    );
+    
+    // Create the message in the database
+    let msg = await Message.createMessage({
+      content,
+      sender: socket.user._id,
+      group: room,
+      reply,
+    });
+
+    // Populate the sender details before emitting the message
+    msg = await msg.populate("sender", "username email avatarUrl");
+
+    // Emit the message with the populated sender details
+    this.io.to(room).emit("chat-message", {
+      msg: {
+        _id: msg._id,
+        content: msg.content,
+        sender: msg.sender,  // Fully populated sender object
+        group: msg.group,
+        sentAt: msg.sentAt,
+      },
+      user: msg.sender,  // Fully populated sender details
+    });
+  }
+);
+
 
       // get messages
       socket.on("get-messages", async ({ room, limit = 15, cursor = null }) => {

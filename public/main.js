@@ -124,11 +124,14 @@ function instantiateSocketIOAndDependencies(token, userEmail, userId) {
   socket.on("chat-message", ({ msg, user }) => {
     const item = document.createElement("li");
     item.setAttribute("id", msg._id);
-    item.innerHTML = `${user.email}: ${msg.content}`;
+  
+    // Use sender's username or email
+    item.innerHTML = `${user.username}: ${msg.content}`;
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
     setCursor();
   });
+  
 
   socket.on(`messages-${userId}`, ({ messages: msgs, nextCursor, user }) => {
     for (const msg of msgs ?? []) {
