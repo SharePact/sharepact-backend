@@ -82,7 +82,7 @@ class Messaging {
 
           // Emit the message with the populated sender details
           this.io.to(room).emit("chat-message", {
-            message: {
+            messages: {
               _id: msg._id,
               content: msg.content,
               sender: msg.sender, // Fully populated sender object

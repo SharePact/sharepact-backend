@@ -121,7 +121,7 @@ function instantiateSocketIOAndDependencies(token, userEmail, userId) {
   roomForm.addEventListener("submit", handleRoomJoin);
   messageForm.addEventListener("submit", handleMessageSend);
 
-  socket.on("chat-message", ({ message: msg, user }) => {
+  socket.on("chat-message", ({ messages: msg, user }) => {
     const item = document.createElement("li");
     item.setAttribute("id", msg._id);
 
