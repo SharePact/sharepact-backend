@@ -60,40 +60,39 @@ class Messaging {
       });
 
       // Broadcast a message to a specific room when received
-     // In your setupSocketHandlers function
+      // In your setupSocketHandlers function
 
-socket.on(
-  "send-message",
-  async ({ room, msg: content, reply = null }) => {
-    console.log(
-      `received message in room ${room} from ${socket.user._id}: ${content}`
-    );
-    
-    // Create the message in the database
-    let msg = await Message.createMessage({
-      content,
-      sender: socket.user._id,
-      group: room,
-      reply,
-    });
+      socket.on(
+        "send-message",
+        async ({ room, msg: content, reply = null }) => {
+          console.log(
+            `received message in room ${room} from ${socket.user._id}: ${content}`
+          );
 
-    // Populate the sender details before emitting the message
-    msg = await msg.populate("sender", "username email avatarUrl");
+          // Create the message in the database
+          let msg = await Message.createMessage({
+            content,
+            sender: socket.user._id,
+            group: room,
+            reply,
+          });
 
-    // Emit the message with the populated sender details
-    this.io.to(room).emit("chat-message", {
-      msg: {
-        _id: msg._id,
-        content: msg.content,
-        sender: msg.sender,  // Fully populated sender object
-        group: msg.group,
-        sentAt: msg.sentAt,
-      },
-      user: msg.sender,  // Fully populated sender details
-    });
-  }
-);
+          // Populate the sender details before emitting the message
+          msg = await msg.populate("sender", "username email avatarUrl");
 
+          // Emit the message with the populated sender details
+          this.io.to(room).emit("chat-message", {
+            message: {
+              _id: msg._id,
+              content: msg.content,
+              sender: msg.sender, // Fully populated sender object
+              group: msg.group,
+              sentAt: msg.sentAt,
+            },
+            user: msg.sender, // Fully populated sender details
+          });
+        }
+      );
 
       // get messages
       socket.on("get-messages", async ({ room, limit = 15, cursor = null }) => {
