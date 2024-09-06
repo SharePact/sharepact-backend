@@ -11,6 +11,10 @@ const MemberSchema = new Schema({
   confirmStatus: { type: Boolean, default: false },
   paymentActive: { type: Boolean, default: false },
   lastInvoiceSentAt: { type: Date },
+  addedAt: {
+    type: Date,
+    default: Date.now, // Automatically set the time when a member is added
+  },
 });
 const modelName = "Group";
 
@@ -64,6 +68,7 @@ const GroupSchema = new Schema(
           user: userId,
           subscriptionStatus,
           confirmStatus,
+          addedAt: new Date(),
         });
         await this.save();
         return this;
@@ -278,7 +283,7 @@ const GroupSchema = new Schema(
           groupCode,
           admin,
           members,
-          oneTimePayment, 
+          oneTimePayment,
           existingGroup,
           activated,
           nextSubscriptionDate,
@@ -314,7 +319,7 @@ const GroupSchema = new Schema(
 
         if (active) {
           query.activated = active;
-        };
+        }
         if (oneTimePayment !== null) {
           query.oneTimePayment = oneTimePayment;
         }
@@ -332,6 +337,16 @@ const GroupSchema = new Schema(
           };
         }
 
+        // Determine the sorting order based on the user role
+        let sortOption = {};
+        const isAdmin = await model.exists({ admin: userId });
+        if (isAdmin) {
+          // Sort by group creation date (newest first) if the user is the admin
+          sortOption["createdAt"] = -1;
+        }
+        // Sort by when the user was added to the group if they are a member
+        const memberSort = { "members.addedAt": -1 };
+
         const options = {
           populate: [
             {
@@ -343,6 +358,10 @@ const GroupSchema = new Schema(
               select: "serviceName logoUrl",
             },
           ],
+          sort: {
+            ...sortOption,
+            ...memberSort,
+          },
         };
 
         const result = await getPaginatedResults(
@@ -524,6 +543,10 @@ const GroupSchema = new Schema(
     },
   }
 );
+GroupSchema.index({
+  "members.lastInvoiceSentAt": 1,
+  "members.paymentActive": 1,
+});
 const Group = mongoose.model(modelName, GroupSchema);
 
 module.exports = Group;
