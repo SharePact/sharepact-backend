@@ -39,6 +39,7 @@ const UserSchema = new mongoose.Schema(
     avatarUrl: { type: String, required: true },
     verified: { type: Boolean, default: false },
     role: { type: String, default: "user" },
+    deviceToken: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     notificationConfig: {
@@ -71,6 +72,11 @@ const UserSchema = new mongoose.Schema(
       async deleteAccount() {
         this.deleted = true;
         this.deletedAt = new Date();
+        await this.save();
+        return this;
+      },
+      async updateDeviceToken(token = "") {
+        this.deviceToken = token;
         await this.save();
         return this;
       },
