@@ -80,6 +80,16 @@ class Messaging {
           // Populate the sender details before emitting the message
           msg = await msg.populate("sender", "username email avatarUrl");
 
+          try {
+            const updatedDoc = await YourModel.findOneAndUpdate(
+              { _id: room }, // Filter (find the document)
+              { $set: { updatedAt: Date.now() } }, // Update only the updatedAt field
+              { new: true } // Return the updated document
+            );
+          } catch (error) {
+            console.log("error updating group");
+          }
+
           // Emit the message with the populated sender details
           this.io.to(room).emit("chat-message", {
             messages: {

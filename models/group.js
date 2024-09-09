@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const { getPaginatedResults } = require("../utils/pagination");
 const ServiceModel = require("../models/service");
+const { updateTimestampPlugin } = require("../utils/mongoose-plugins");
 
 const paymentDeadline = 48;
 const upcomingDeadline = 5 * 24;
@@ -338,12 +339,12 @@ const GroupSchema = new Schema(
         }
 
         // Determine the sorting order based on the user role
-        let sortOption = {};
-        const isAdmin = await model.exists({ admin: userId });
-        if (isAdmin) {
-          // Sort by group creation date (newest first) if the user is the admin
-          sortOption["createdAt"] = -1;
-        }
+        let sortOption = { updatedAt: -1 };
+        // const isAdmin = await model.exists({ admin: userId });
+        // if (isAdmin) {
+        //   // Sort by group creation date (newest first) if the user is the admin
+        //   sortOption["createdAt"] = -1;
+        // }
         // Sort by when the user was added to the group if they are a member
         const memberSort = { "members.addedAt": -1 };
 
@@ -547,6 +548,8 @@ GroupSchema.index({
   "members.lastInvoiceSentAt": 1,
   "members.paymentActive": 1,
 });
+
+GroupSchema.plugin(updateTimestampPlugin);
 const Group = mongoose.model(modelName, GroupSchema);
 
 module.exports = Group;
