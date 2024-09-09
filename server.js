@@ -29,12 +29,6 @@ mongoose
   });
 })();
 FirebaseService.initApp();
-FirebaseService.sendNotification(
-  "1:573408586871:web:919d0ee10f4f534b6b2a72",
-  "test",
-  "test"
-);
-FirebaseService.sendNotificationToTopic("uuwiyiveq", "test", "test");
 
 const server = new Server(new Router());
 server.startListening();
