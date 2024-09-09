@@ -74,7 +74,7 @@ exports.signupWithEmail = async (req, res) => {
 
 // Sign-in with email and password
 exports.signinWithEmail = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, deviceToken } = req.body;
 
   try {
     const user = await UserModel.findByEmail(email);
@@ -97,6 +97,8 @@ exports.signinWithEmail = async (req, res) => {
     // delete old token and Generate new token
     await AuthTokenModel.deleteAllTokensByUser(user._id);
     const token = await AuthTokenModel.createToken(user);
+
+    if (deviceToken) await user.updateDeviceToken(deviceToken);
 
     // Remove sensitive fields from user object before sending in response
     const userWithoutSensitiveInfo = user.toJSON();

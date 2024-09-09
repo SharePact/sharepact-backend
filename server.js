@@ -3,6 +3,7 @@ const Server = require("./middleware/index.js");
 const Router = require("./routes/index.js");
 const processQueueManager = require("./processQueue");
 const NotificationService = require("./notification/index");
+const FirebaseService = require("./notification/firebase.js");
 const PaymentInvoiceService = require("./notification/payment_invoice");
 
 require("dotenv").config();
@@ -27,6 +28,13 @@ mongoose
     event: "testEvent",
   });
 })();
+FirebaseService.initApp();
+FirebaseService.sendNotification(
+  "1:573408586871:web:919d0ee10f4f534b6b2a72",
+  "test",
+  "test"
+);
+FirebaseService.sendNotificationToTopic("uuwiyiveq", "test", "test");
 
 const server = new Server(new Router());
 server.startListening();
