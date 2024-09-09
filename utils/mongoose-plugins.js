@@ -23,6 +23,19 @@ function writeOnlyPlugin(schema, options) {
   };
 }
 
+const updateTimestampPlugin = (schema) => {
+  schema.pre("save", function (next) {
+    this.updatedAt = Date.now();
+    next();
+  });
+
+  schema.pre("findOneAndUpdate", function (next) {
+    this.set({ updatedAt: Date.now() });
+    next();
+  });
+};
+
 module.exports = {
   writeOnlyPlugin,
+  updateTimestampPlugin,
 };
