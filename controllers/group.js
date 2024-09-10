@@ -517,8 +517,10 @@ exports.leaveGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
 
-    // Fetch the group and populate admin field
-    const group = await GroupModel.findById(groupId).populate("admin", "username avatarUrl email");
+    // Fetch the group and populate admin and members fields
+    const group = await GroupModel.findById(groupId)
+      .populate("admin", "username avatarUrl email")
+      .populate("members.user", "_id username"); // ensure members.user is populated
 
     // Check if the group exists
     if (!group) {
@@ -531,14 +533,14 @@ exports.leaveGroup = async (req, res) => {
     }
 
     // Check if the user is a member of the group
-    const isMember = group.members.some(member => member.toString() === req.user._id.toString());
+    const isMember = group.members.some(member => member.user && member.user._id.toString() === req.user._id.toString());
 
     if (!isMember) {
       return BuildHttpResponse(res, 400, "You are not a member of this group");
     }
 
     // Remove the user from the group members
-    group.members.pull(req.user._id);
+    group.members = group.members.filter(member => member.user._id.toString() !== req.user._id.toString());
     await group.save();
 
     // Send notification to the admin
@@ -557,6 +559,7 @@ exports.leaveGroup = async (req, res) => {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 
 
