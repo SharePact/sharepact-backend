@@ -516,36 +516,51 @@ exports.getJoinRequests = async (req, res) => {
 exports.leaveGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const group = await GroupModel.findById(groupId).populate(
-      "admin",
-      "username avatarUrl email"
-    );
 
+    // Fetch the group and populate admin field
+    const group = await GroupModel.findById(groupId).populate("admin", "username avatarUrl email");
+
+    // Check if the group exists
     if (!group) {
       return BuildHttpResponse(res, 404, "Group not found");
     }
 
-    if (group.admin.toString() == req.user._id.toString()) {
-      return BuildHttpResponse(res, 403, "admin cannot leave group");
+    // Check if the current user is the admin
+    if (group.admin && group.admin._id.toString() === req.user._id.toString()) {
+      return BuildHttpResponse(res, 403, "Admin cannot leave the group");
     }
 
-    await group.removeMember(req.user._id);
+    // Check if the user is a member of the group
+    const isMember = group.members.some(member => member.toString() === req.user._id.toString());
 
+    if (!isMember) {
+      return BuildHttpResponse(res, 400, "You are not a member of this group");
+    }
+
+    // Remove the user from the group members
+    group.members.pull(req.user._id);
+    await group.save();
+
+    // Send notification to the admin
     await NotificationService.sendNotification({
       type: "memberRemovalUpdateForCreator",
       userId: group.admin._id,
       to: [group.admin.email],
-      textContent: `Your member ${user.username} has left your group ${group.groupName}`,
+      textContent: `Your member ${req.user.username} has left your group ${group.groupName}`,
       username: group.admin.username,
       groupName: group.groupName,
-      content: `Your member ${user.username} has left your group ${group.groupName}`,
+      content: `Your member ${req.user.username} has left your group ${group.groupName}`,
     });
 
-    return BuildHttpResponse(res, 200, "successfully left group");
+    return BuildHttpResponse(res, 200, "Successfully left the group");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
+
+
+
 
 exports.UpdateConfirmStatus = async (req, res) => {
   try {
