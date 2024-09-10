@@ -124,6 +124,14 @@ exports.createGroup = async (req, res) => {
       groupId: newGroup._id,
       members: [admin],
     });
+// Notify admin of group creation
+await NotificationService.sendNotification({
+  type: "groupcreation",
+  userId: admin,
+  to: [req.user.email],
+  textContent: `Your group "${newGroup.groupName}" has been successfully created.`,
+});
+
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
   } catch (error) {
@@ -284,7 +292,6 @@ exports.requestToJoinGroup = async (req, res) => {
     // Add join request to the group
     group.joinRequests.push({ user: userId, message });
     await group.save();
-
     return BuildHttpResponse(res, 200, "Request to join group sent successfully");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
@@ -334,6 +341,8 @@ exports.handleJoinRequest = async (req, res) => {
 
     // Remove join request from the list whether it's approved or rejected
     await group.removeJoinRequestByIndex(joinRequestIndex);
+
+
 
     return BuildHttpResponse(
       res,

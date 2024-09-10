@@ -31,6 +31,8 @@ class NotificationService {
       memberRemovalUpdateForCreator: "memberRemovalUpdateForCreator.ejs",
       paymentReminder: "paymentReminder.ejs",
       memberPaymentReminderForCreator: "memberPaymentReminderForCreator.ejs",
+      groupcreation: "groupcreation.ejs",
+      joinrequest: "joinrequest.ejs",
     };
 
     const templateFile = templates[type];
@@ -71,16 +73,18 @@ class NotificationService {
 
   static getSubject(type) {
     const subjects = {
-      welcome: "Welcome to Our Service!",
+      welcome: "Welcome to Sharepact!",
       emailVerification: "Email Verification Code",
       passwordReset: "Password Reset Request",
       loginAlert: "Login Notification",
       passwordChangeAlert: "Password Change Notification",
       emailVerificationSuccessful: "Email Verified Successfully",
       removalFromSubscriptionGroup: "Removal From Subscription Group",
-      memberRemovalUpdateForCreator: "Member has left Group",
+      memberRemovalUpdateForCreator: "A Member has left Group",
       paymentReminder: "Reminder to make payment",
-      memberPaymentReminderForCreator: "Member Reminder to make payment",
+      memberPaymentReminderForCreator: "Reminder to make payment",
+      groupcreation: "Your Group has been created",
+      joinrequest: "Someone has joined your group",
     };
     return subjects[type] || "";
   }

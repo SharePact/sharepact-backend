@@ -352,6 +352,13 @@ exports.VerifyEmailVerificationOtp = async (req, res) => {
       to: [user.email],
       textContent: "Email successfully verified",
     });
+ // Trigger welcome email after successful verification
+ await NotificationService.sendNotification({
+  type: "welcome",
+  userId: user._id,
+  to: [user.email],
+  textContent: "Welcome to Sharepact! We're glad to have you on board.",
+});
 
     return BuildHttpResponse(res, 200, "email verified");
   } catch (error) {
