@@ -1,4 +1,5 @@
 const brevo = require("@getbrevo/brevo");
+require("dotenv").config();
 
 exports.sendEmailWithBrevo = ({ subject, htmlContent, to, attachments }) => {
   let apiInstance = new brevo.TransactionalEmailsApi();

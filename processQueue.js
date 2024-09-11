@@ -1,4 +1,5 @@
 const Queue = require("bull");
+require("dotenv").config();
 
 class ProcessQueueManager {
   constructor() {

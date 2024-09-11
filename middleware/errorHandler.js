@@ -1,13 +1,9 @@
 const axios = require("axios");
+require("dotenv").config();
 
 const { CustomError } = require("../errors/custom-error");
 
-exports.errorHandler = (
-  err,
-  req,
-  res,
-  next
-) => {
+exports.errorHandler = (err, req, res, next) => {
   if (axios.isAxiosError(err)) {
     return res.status(err.response?.status || 500).send({
       status: false,
@@ -22,8 +18,10 @@ exports.errorHandler = (
 
   return res.status(500).send({
     status: false,
-    message: process.env.NODE_ENV !== "production" ? err.message || "Something went wrong" : 
-    "Something went wrong, please try again later.",
+    message:
+      process.env.NODE_ENV !== "production"
+        ? err.message || "Something went wrong"
+        : "Something went wrong, please try again later.",
     code: 500,
   });
 };
