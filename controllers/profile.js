@@ -4,6 +4,7 @@ const { BuildHttpResponse } = require("../utils/response");
 const AuthTokenModel = require("../models/authToken");
 const NotificationModel = require("../models/Notifications");
 const NotificationService = require("../notification/index");
+const inAppNotificationService = require("../notification/inapp");
 
 // Predefined avatar URLs
 const avatarUrls = [
@@ -133,6 +134,15 @@ exports.changePassword = async (req, res) => {
         to: [user.email],
         textContent: "Password change successful",
       });
+
+      if (user?.deviceToken) {
+        await inAppNotificationService.sendNotification({
+          medium: "token",
+          topicTokenOrGroupId: user?.deviceToken,
+          name: "passwordChangeAlert",
+          userId: user._id,
+        });
+      }
     }
 
     return BuildHttpResponse(res, 200, "Password changed successfully");
@@ -163,7 +173,7 @@ exports.deleteAccount = async (req, res) => {
 // Get user's notification configuration
 exports.getNotificationConfig = async (req, res) => {
   const userId = req.user._id;
-  
+
   try {
     const user = await User.findById(userId);
     if (!user) {
@@ -172,8 +182,13 @@ exports.getNotificationConfig = async (req, res) => {
 
     // Assuming the User model has a method to get notification config
     const notificationConfig = user.notificationConfig;
-    
-    return BuildHttpResponse(res, 200, "Notification configuration retrieved successfully", notificationConfig);
+
+    return BuildHttpResponse(
+      res,
+      200,
+      "Notification configuration retrieved successfully",
+      notificationConfig
+    );
   } catch (error) {
     console.error("Error retrieving notification configuration:", error);
     return BuildHttpResponse(res, 500, "Internal server error");

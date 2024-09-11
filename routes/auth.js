@@ -3,7 +3,7 @@ const router = express.Router();
 const auth = require("../controllers/auth");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 const { createUserSchema } = require("../zodSchemas");
-const { checkAuth } = require("../middleware/checkauth");
+const { checkAuth } = require("../middleware/checkAuth");
 
 // Sign-up with email and password
 router.post("/signup", ZodMiddleware(createUserSchema), auth.signupWithEmail);

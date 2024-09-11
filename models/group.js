@@ -402,9 +402,9 @@ const GroupSchema = new Schema(
         })
           .populate({
             path: "members.user",
-            select: "username email",
+            select: "username email deviceToken",
           })
-          .populate("admin", "username email");
+          .populate("admin", "username email deviceToken");
       },
       async findGroupsWithInactiveMembers(
         deadlineInHrs = paymentDeadline,
@@ -427,9 +427,9 @@ const GroupSchema = new Schema(
           .limit(limit)
           .populate({
             path: "members.user",
-            select: "username email",
+            select: "username email deviceToken",
           })
-          .populate("admin", "username email");
+          .populate("admin", "username email deviceToken");
       },
       async removeInactiveMembers() {
         const oneDayAgo = new Date(

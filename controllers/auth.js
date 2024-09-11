@@ -5,6 +5,7 @@ const OTPModel = require("../models/otp");
 const { getUserFromToken } = require("../middleware/checkAuth");
 
 const NotificationService = require("../notification/index");
+const inAppNotificationService = require("../notification/inapp");
 const {
   generateRandomUsername,
   hashPassword,
@@ -110,6 +111,15 @@ exports.signinWithEmail = async (req, res) => {
         to: [user.email],
         textContent: "you logged in successfully",
       });
+
+      if (user.deviceToken) {
+        await inAppNotificationService.sendNotification({
+          medium: "token",
+          topicTokenOrGroupId: user.deviceToken,
+          name: "loginAlert",
+          userId: user._id,
+        });
+      }
     }
 
     return BuildHttpResponse(res, 200, "User signed in successfully", {
@@ -261,6 +271,15 @@ exports.ChangePassword = async (req, res) => {
         to: [user.email],
         textContent: "Password change successful",
       });
+
+      if (user?.deviceToken) {
+        await inAppNotificationService.sendNotification({
+          medium: "token",
+          topicTokenOrGroupId: user?.deviceToken,
+          name: "passwordChangeAlert",
+          userId: user._id,
+        });
+      }
     }
 
     return BuildHttpResponse(res, 200, "password change successful");
@@ -352,13 +371,13 @@ exports.VerifyEmailVerificationOtp = async (req, res) => {
       to: [user.email],
       textContent: "Email successfully verified",
     });
- // Trigger welcome email after successful verification
- await NotificationService.sendNotification({
-  type: "welcome",
-  userId: user._id,
-  to: [user.email],
-  textContent: "Welcome to Sharepact! We're glad to have you on board.",
-});
+    // Trigger welcome email after successful verification
+    await NotificationService.sendNotification({
+      type: "welcome",
+      userId: user._id,
+      to: [user.email],
+      textContent: "Welcome to Sharepact! We're glad to have you on board.",
+    });
 
     return BuildHttpResponse(res, 200, "email verified");
   } catch (error) {
