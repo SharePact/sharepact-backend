@@ -75,7 +75,11 @@ const MessageSchema = new Schema(
           replyTo,
         });
         await newMessage.save();
-        return newMessage;
+
+    // Update the group's latestMessageTime field to the current time
+    const Group = mongoose.model("Group");
+    await Group.findByIdAndUpdate(group, { latestMessageTime: new Date() });
+    return newMessage;
       },
        // Add the missing getLatestMessageByGroup method
   async getLatestMessageByGroup(groupId) {

@@ -53,6 +53,7 @@ const GroupSchema = new Schema(
     existingGroup: { type: Boolean, default: false },
     activated: { type: Boolean, default: false },
     nextSubscriptionDate: { type: Date },
+    latestMessageTime: { type: Date, default: Date.now }, // This will track the latest message time
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },

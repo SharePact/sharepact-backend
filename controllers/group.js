@@ -488,7 +488,7 @@ exports.getGroupsList = async (req, res) => {
     const sortedGroups = groupsWithDetails.sort((a, b) => {
       return new Date(b.latestMessageTime) - new Date(a.latestMessageTime);
     });
-
+    
     return BuildHttpResponse(res, 200, "Groups fetched successfully", {
       groups: sortedGroups,
       pagination: groups.pagination,
