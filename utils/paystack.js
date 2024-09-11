@@ -1,4 +1,5 @@
 const axios = require("axios");
+require("dotenv").config();
 const base_url = "https://api.paystack.co";
 const sec_key = process.env?.PAYSTACK_SEC_KEY;
 class Paystack {

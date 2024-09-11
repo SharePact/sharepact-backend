@@ -1,4 +1,5 @@
 const axios = require("axios");
+require("dotenv").config();
 
 const baseUrl = "https://api.flutterwave.com";
 const secKey = process?.env?.FLUTTERWAVE_SEC_KEY;
@@ -46,6 +47,7 @@ class Flutterwave {
 
     try {
       const response = await axios.post(url, payload, { headers });
+
       if (response.data.status === "success") {
         return {
           status: true,

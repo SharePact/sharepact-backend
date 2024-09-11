@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
+require("dotenv").config();
 const {
   uniqueNamesGenerator,
   adjectives,

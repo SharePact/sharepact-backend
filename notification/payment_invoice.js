@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 const puppeteer = require("puppeteer");
 const processQueueManager = require("../processQueue");
 const GroupModel = require("../models/group");
+require("dotenv").config();
 
 class PaymentInvoiceService {
   static async sendToGroup({ group }) {

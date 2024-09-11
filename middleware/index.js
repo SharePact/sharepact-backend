@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const Messaging = require("../routes/socket.io");
+require("dotenv").config();
 
 class Server {
   constructor(baseRouter) {
