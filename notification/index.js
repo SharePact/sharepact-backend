@@ -33,6 +33,7 @@ class NotificationService {
       memberPaymentReminderForCreator: "memberPaymentReminderForCreator.ejs",
       groupcreation: "groupcreation.ejs",
       joinrequest: "joinrequest.ejs",
+      requestdecision: "requestdecision.ejs"
     };
 
     const templateFile = templates[type];
@@ -84,7 +85,9 @@ class NotificationService {
       paymentReminder: "Reminder to make payment",
       memberPaymentReminderForCreator: "Reminder to make payment",
       groupcreation: "Your Group has been created",
-      joinrequest: "Someone has joined your group",
+      joinrequest: "Someone wants to join your group",
+      requestdecision: "Admin has either approved/rejected your request",
+
     };
     return subjects[type] || "";
   }

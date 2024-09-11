@@ -317,6 +317,16 @@ exports.requestToJoinGroup = async (req, res) => {
       });
     }
 
+    // Send notification to the admin
+    await NotificationService.sendNotification({
+      type: "joinrequest",
+      userId: group.admin._id,
+      to: [group.admin.email],
+      textContent: `A member ${req.user.username} wants to join your group ${group.groupName}`,
+      username: group.admin.username,
+      groupName: group.groupName,
+      content: `A member ${req.user.username} wants to join your group ${group.groupName}`,
+    });
     return BuildHttpResponse(
       res,
       200,
@@ -365,6 +375,15 @@ exports.handleJoinRequest = async (req, res) => {
         const chatRoom = await ChatRoomModel.findByGroupId(group._id);
         await chatRoom.addMember(userId);
 
+    // Send notification to the user
+    // await NotificationService.sendNotification({
+    //   type: "requestdecision",
+    //   userId: userId,
+    //   to: [req.user.email],
+    //   textContent: ` A decision for your join request on ${group.groupName} has been made`,
+    //   groupName: group.groupName,
+    //   content: ` A decision for your join request on ${group.groupName} has been made`,
+    // });
         if (memberRequest?.user?.deviceToken) {
           await inAppNotificationService.sendNotification({
             medium: "token",
