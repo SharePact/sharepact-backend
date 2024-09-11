@@ -29,28 +29,10 @@ class ProcessQueueManager {
     this.processQueue.process(async (job, done) => {
       const { event } = job.data;
       try {
-        switch (event) {
-          case "notificationEvent":
-            const notificationEventHandler = this.handlers[event];
-            if (!notificationEventHandler)
-              return done(new Error(`handler for event ${event} not found`));
-            await notificationEventHandler(job.data);
-            break;
-          case "paymentInvoiceEvent":
-            const paymentInvoiceEventHandler = this.handlers[event];
-            if (!paymentInvoiceEventHandler)
-              return done(new Error(`handler for event ${event} not found`));
-            await paymentInvoiceEventHandler(job.data);
-            break;
-          case "testEvent":
-            const testEventHandler = this.handlers[event];
-            if (!testEventHandler)
-              return done(new Error(`handler for event ${event} not found`));
-            await testEventHandler(job.data);
-            break;
-          default:
-            return done(new Error(`process event ${event} not implemented`));
-        }
+        const hnd = this.handlers[event];
+        if (!hnd)
+          return done(new Error(`handler for event ${event} not found`));
+        await hnd(job.data);
         done();
       } catch (error) {
         done(error);

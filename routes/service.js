@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("../config/multer");
 const serviceController = require("../controllers/service");
 const { createServiceSchema } = require("../zodSchemas/index");
-const { checkAuth } = require("../middleware/checkauth");
+const { checkAuth } = require("../middleware/checkAuth");
 const checkAdmin = require("../middleware/checkAdmin");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 

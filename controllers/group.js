@@ -1,10 +1,11 @@
 const GroupModel = require("../models/group");
 const ChatRoomModel = require("../models/chatroom");
 const ServiceModel = require("../models/service");
-const Message = require("../models/message"); 
+const Message = require("../models/message");
 const PaymentInvoiceService = require("../notification/payment_invoice");
 const NotificationService = require("../notification/index");
 const { BuildHttpResponse } = require("../utils/response");
+const inAppNotificationService = require("../notification/inapp");
 
 const generateGroupCode = async () => {
   let code;
@@ -124,14 +125,13 @@ exports.createGroup = async (req, res) => {
       groupId: newGroup._id,
       members: [admin],
     });
-// Notify admin of group creation
-await NotificationService.sendNotification({
-  type: "groupcreation",
-  userId: admin,
-  to: [req.user.email],
-  textContent: `Your group "${newGroup.groupName}" has been successfully created.`,
-});
-
+    // Notify admin of group creation
+    await NotificationService.sendNotification({
+      type: "groupcreation",
+      userId: admin,
+      to: [req.user.email],
+      textContent: `Your group "${newGroup.groupName}" has been successfully created.`,
+    });
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
   } catch (error) {
@@ -268,14 +268,21 @@ exports.requestToJoinGroup = async (req, res) => {
     const userId = req.user._id;
 
     // Find the group by its groupCode
-    const group = await GroupModel.findOne({ groupCode });
+    const group = await GroupModel.findOne({ groupCode }).populate(
+      "admin",
+      "email deviceToken"
+    );
     if (!group) {
       return BuildHttpResponse(res, 404, "Group not found");
     }
 
     // Check if the user is already a member
     if (await group.isUserAMember(userId)) {
-      return BuildHttpResponse(res, 400, "You are already a member of this group");
+      return BuildHttpResponse(
+        res,
+        400,
+        "You are already a member of this group"
+      );
     }
 
     // Check if the group is full
@@ -284,20 +291,41 @@ exports.requestToJoinGroup = async (req, res) => {
     }
 
     // Check if the user already has a pending join request
-    const existingRequest = group.joinRequests.find(request => request.user.toString() === userId.toString());
+    const existingRequest = group.joinRequests.find(
+      (request) => request.user.toString() === userId.toString()
+    );
     if (existingRequest) {
-      return BuildHttpResponse(res, 400, "You already have a pending request. Please wait for the admin to accept you.");
+      return BuildHttpResponse(
+        res,
+        400,
+        "You already have a pending request. Please wait for the admin to accept you."
+      );
     }
 
     // Add join request to the group
     group.joinRequests.push({ user: userId, message });
     await group.save();
-    return BuildHttpResponse(res, 200, "Request to join group sent successfully");
+
+    if (group?.admin?.deviceToken) {
+      await inAppNotificationService.sendNotification({
+        medium: "token",
+        topicTokenOrGroupId: group?.admin?.deviceToken,
+        name: "joinrequest",
+        userId: user._id,
+        groupId: group._id,
+        memberId: userId,
+      });
+    }
+
+    return BuildHttpResponse(
+      res,
+      200,
+      "Request to join group sent successfully"
+    );
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
-
 
 exports.handleJoinRequest = async (req, res) => {
   try {
@@ -305,7 +333,7 @@ exports.handleJoinRequest = async (req, res) => {
     const { groupId, userId, approve } = req.body;
     const group = await GroupModel.findById(groupId).populate(
       "joinRequests.user",
-      "username avatarUrl"
+      "username avatarUrl deviceToken"
     );
 
     if (!group) {
@@ -321,7 +349,7 @@ exports.handleJoinRequest = async (req, res) => {
     }
 
     const joinRequestIndex = await group.findJoinRequestIndexByUserId(userId);
-
+    const memberRequest = group?.joinRequests[joinRequestIndex];
     if (joinRequestIndex === -1) {
       return BuildHttpResponse(res, 404, "Join request not found");
     }
@@ -336,13 +364,31 @@ exports.handleJoinRequest = async (req, res) => {
         // Add member to chat room
         const chatRoom = await ChatRoomModel.findByGroupId(group._id);
         await chatRoom.addMember(userId);
+
+        if (memberRequest?.user?.deviceToken) {
+          await inAppNotificationService.sendNotification({
+            medium: "token",
+            topicTokenOrGroupId: memberRequest?.user?.deviceToken,
+            name: "joinRequestAccepted",
+            userId: userId,
+            groupId: group._id,
+          });
+        }
+      }
+    } else {
+      if (memberRequest?.user?.deviceToken) {
+        await inAppNotificationService.sendNotification({
+          medium: "token",
+          topicTokenOrGroupId: memberRequest?.user?.deviceToken,
+          name: "joinRequestRejected",
+          userId: userId,
+          groupId: group._id,
+        });
       }
     }
 
     // Remove join request from the list whether it's approved or rejected
     await group.removeJoinRequestByIndex(joinRequestIndex);
-
-
 
     return BuildHttpResponse(
       res,
@@ -389,7 +435,7 @@ exports.getGroupDetails = async (req, res) => {
       serviceDescription: service.serviceDescription,
       serviceLogo: service.logoUrl,
       nextSubscriptionDate: group.nextSubscriptionDate,
-      joinRequests: group.joinRequests.map(request => ({
+      joinRequests: group.joinRequests.map((request) => ({
         user: {
           _id: request.user._id,
           username: request.user.username,
@@ -397,7 +443,7 @@ exports.getGroupDetails = async (req, res) => {
         },
         message: request.message,
         _id: request._id,
-      }))
+      })),
     };
 
     // Check if the requesting user is the admin
@@ -418,24 +464,25 @@ exports.getGroupsList = async (req, res) => {
     const userId = req.user._id;
 
     // Fetch groups that the user belongs to
-    const groups = await GroupModel.getGroups(
-      userId,
-      page,
-      limit
-    );
+    const groups = await GroupModel.getGroups(userId, page, limit);
 
     // Fetch latest message and unread count for each group
-    const groupsWithDetails = await Promise.all(groups.results.map(async (group) => {
-      const unreadMessages = await Message.getUnreadMessagesCountByGroup(userId, group._id);
-      const latestMessage = await Message.getLatestMessageByGroup(group._id);
+    const groupsWithDetails = await Promise.all(
+      groups.results.map(async (group) => {
+        const unreadMessages = await Message.getUnreadMessagesCountByGroup(
+          userId,
+          group._id
+        );
+        const latestMessage = await Message.getLatestMessageByGroup(group._id);
 
-      return {
-        ...group.toObject(),
-        unreadMessages,
-        latestMessage,
-        latestMessageTime: latestMessage ? latestMessage.createdAt : null
-      };
-    }));
+        return {
+          ...group.toObject(),
+          unreadMessages,
+          latestMessage,
+          latestMessageTime: latestMessage ? latestMessage.createdAt : null,
+        };
+      })
+    );
 
     // Sort groups by the latest message timestamp, newest first
     const sortedGroups = groupsWithDetails.sort((a, b) => {
@@ -444,13 +491,12 @@ exports.getGroupsList = async (req, res) => {
 
     return BuildHttpResponse(res, 200, "Groups fetched successfully", {
       groups: sortedGroups,
-      pagination: groups.pagination
+      pagination: groups.pagination,
     });
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
-
 
 exports.getGroupDetailsByCode = async (req, res) => {
   try {
@@ -528,7 +574,7 @@ exports.leaveGroup = async (req, res) => {
 
     // Fetch the group and populate admin and members fields
     const group = await GroupModel.findById(groupId)
-      .populate("admin", "username avatarUrl email")
+      .populate("admin", "username avatarUrl email deviceToken")
       .populate("members.user", "_id username"); // ensure members.user is populated
 
     // Check if the group exists
@@ -542,14 +588,19 @@ exports.leaveGroup = async (req, res) => {
     }
 
     // Check if the user is a member of the group
-    const isMember = group.members.some(member => member.user && member.user._id.toString() === req.user._id.toString());
+    const isMember = group.members.some(
+      (member) =>
+        member.user && member.user._id.toString() === req.user._id.toString()
+    );
 
     if (!isMember) {
       return BuildHttpResponse(res, 400, "You are not a member of this group");
     }
 
     // Remove the user from the group members
-    group.members = group.members.filter(member => member.user._id.toString() !== req.user._id.toString());
+    group.members = group.members.filter(
+      (member) => member.user._id.toString() !== req.user._id.toString()
+    );
     await group.save();
 
     // Send notification to the admin
@@ -563,16 +614,22 @@ exports.leaveGroup = async (req, res) => {
       content: `Your member ${req.user.username} has left your group ${group.groupName}`,
     });
 
+    if (group?.admin?.deviceToken) {
+      await inAppNotificationService.sendNotification({
+        medium: "token",
+        topicTokenOrGroupId: group?.admin?.deviceToken,
+        name: "memberRemovalUpdateForCreator",
+        userId: group.admin._id,
+        groupId: group._id,
+        memberId: req.user._id,
+      });
+    }
+
     return BuildHttpResponse(res, 200, "Successfully left the group");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
-
-
-
-
-
 
 exports.UpdateConfirmStatus = async (req, res) => {
   try {
