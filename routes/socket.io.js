@@ -1,6 +1,6 @@
 const http = require("http");
 const socketIo = require("socket.io");
-const { getUserFromToken } = require("../middleware/checkauth");
+const { getUserFromToken } = require("../middleware/checkAuth");
 const Message = require("../models/message");
 class Messaging {
   constructor(app) {
@@ -60,19 +60,47 @@ class Messaging {
       });
 
       // Broadcast a message to a specific room when received
+      // In your setupSocketHandlers function
+
       socket.on(
         "send-message",
         async ({ room, msg: content, reply = null }) => {
           console.log(
             `received message in room ${room} from ${socket.user._id}: ${content}`
           );
-          const msg = await Message.createMessage({
+
+          // Create the message in the database
+          let msg = await Message.createMessage({
             content,
             sender: socket.user._id,
             group: room,
             reply,
           });
-          this.io.to(room).emit("chat-message", { msg, user: socket.user });
+
+          // Populate the sender details before emitting the message
+          msg = await msg.populate("sender", "username email avatarUrl");
+
+          try {
+            const updatedDoc = await YourModel.findOneAndUpdate(
+              { _id: room }, // Filter (find the document)
+              { $set: { updatedAt: Date.now() } }, // Update only the updatedAt field
+              { new: true } // Return the updated document
+            );
+          } catch (error) {
+            console.log("error updating group");
+          }
+
+          // Emit the message with the populated sender details
+          this.io.to(room).emit("chat-message", {
+            messages: {
+              _id: msg._id,
+              content: msg.content,
+              sender: msg.sender, // Fully populated sender object
+              group: msg.group,
+              sentAt: msg.sentAt,
+            },
+            user: msg.sender, // Fully populated sender details
+          });
         }
       );
 

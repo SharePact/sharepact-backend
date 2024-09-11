@@ -121,10 +121,12 @@ function instantiateSocketIOAndDependencies(token, userEmail, userId) {
   roomForm.addEventListener("submit", handleRoomJoin);
   messageForm.addEventListener("submit", handleMessageSend);
 
-  socket.on("chat-message", ({ msg, user }) => {
+  socket.on("chat-message", ({ messages: msg, user }) => {
     const item = document.createElement("li");
     item.setAttribute("id", msg._id);
-    item.innerHTML = `${user.email}: ${msg.content}`;
+
+    // Use sender's username or email
+    item.innerHTML = `${user.username}: ${msg.content}`;
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
     setCursor();

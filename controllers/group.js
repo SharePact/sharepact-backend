@@ -1,8 +1,9 @@
 const GroupModel = require("../models/group");
 const ChatRoomModel = require("../models/chatroom");
 const ServiceModel = require("../models/service");
+const Message = require("../models/message"); 
 const PaymentInvoiceService = require("../notification/payment_invoice");
-
+const NotificationService = require("../notification/index");
 const { BuildHttpResponse } = require("../utils/response");
 
 const generateGroupCode = async () => {
@@ -14,7 +15,6 @@ const generateGroupCode = async () => {
   } while (existingGroup);
   return code;
 };
-
 exports.activateGroup = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -44,10 +44,12 @@ exports.activateGroup = async (req, res) => {
     }
 
     group.activated = true;
-    group.nextSubscriptionDate = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
-    ); // 30 days from now
-    // TODO: Get subscription duration from service
+
+    if (!group.oneTimePayment) {
+      group.nextSubscriptionDate = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ); // 30 days from now
+    }
 
     // Generate invoices for all members including admin
     await PaymentInvoiceService.sendToGroup({ group });
@@ -64,8 +66,9 @@ exports.createGroup = async (req, res) => {
     const {
       serviceId,
       groupName,
-      subscriptionPlan,
+      subscriptionCost,
       numberOfMembers,
+      oneTimePayment,
       existingGroup,
       nextSubscriptionDate,
     } = req.body;
@@ -79,31 +82,16 @@ exports.createGroup = async (req, res) => {
       );
     }
 
-    // Fetch service details
     const service = await ServiceModel.findById(serviceId);
     if (!service) {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    // Find the subscription plan in the service
-    const plan = await service.findSubscriptionPlan(subscriptionPlan);
-    if (!plan) {
-      return BuildHttpResponse(res, 404, "Subscription plan not found");
-    }
-
-    const totalMembers = numberOfMembers; // Admin counts as one member already
-    const subscriptionCost = plan.price; // Updated to use 'price' instead of 'cost'
+    const totalMembers = numberOfMembers;
     const handlingFee = service.handlingFees;
-    const totalCost = subscriptionCost;
     const individualShare = subscriptionCost / totalMembers + handlingFee;
 
-    if (
-      !subscriptionCost ||
-      !handlingFee ||
-      !totalCost ||
-      !individualShare ||
-      !admin
-    ) {
+    if (!subscriptionCost || !handlingFee || !individualShare || !admin) {
       throw new Error("Calculation error: missing required fields");
     }
 
@@ -111,14 +99,11 @@ exports.createGroup = async (req, res) => {
 
     const newGroup = await GroupModel.createGroup({
       service: service._id,
-      planName: plan.planName,
       groupName,
-      subscriptionPlan: plan.planName,
       numberOfMembers: totalMembers,
       subscriptionCost,
       handlingFee,
       individualShare,
-      totalCost,
       groupCode,
       admin,
       members: [
@@ -128,19 +113,68 @@ exports.createGroup = async (req, res) => {
           confirmStatus: false,
         },
       ],
+      oneTimePayment,
       existingGroup,
       activated: existingGroup,
-      nextSubscriptionDate: existingGroup ? nextSubscriptionDate : undefined, // Set nextSubscriptionDate if it's an existing group
-      joinRequests: [], // Initialize joinRequests as an empty array
+      nextSubscriptionDate: oneTimePayment ? undefined : nextSubscriptionDate, // Set nextSubscriptionDate only if oneTimePayment is false
+      joinRequests: [],
     });
 
-    // Create a chat room for the group
     const chatRoom = await ChatRoomModel.createChatRoom({
       groupId: newGroup._id,
       members: [admin],
     });
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
+exports.updateSubscriptionCost = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { newSubscriptionCost } = req.body;
+    const userId = req.user._id;
+
+    if (
+      !newSubscriptionCost ||
+      isNaN(newSubscriptionCost) ||
+      newSubscriptionCost <= 0
+    ) {
+      return BuildHttpResponse(res, 400, "Invalid subscription cost");
+    }
+
+    const group = await GroupModel.findById(groupId);
+    if (!group) {
+      return BuildHttpResponse(res, 404, "Group not found");
+    }
+
+    if (group.admin.toString() !== userId.toString()) {
+      return BuildHttpResponse(
+        res,
+        403,
+        "Only the group admin can update the subscription cost"
+      );
+    }
+
+    group.subscriptionCost = newSubscriptionCost;
+
+    // Recalculate the individual share if needed
+    const service = await ServiceModel.findById(group.service);
+    if (service) {
+      const handlingFee = service.handlingFees;
+      const totalMembers = group.numberOfMembers;
+      group.individualShare = newSubscriptionCost / totalMembers + handlingFee;
+    }
+
+    await group.save();
+    return BuildHttpResponse(
+      res,
+      200,
+      "Subscription cost updated successfully",
+      group
+    );
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -172,7 +206,7 @@ exports.getGroupsByServiceId = async (req, res) => {
 exports.getGroups = async (req, res) => {
   const { page, limit } = req.pagination;
   try {
-    let { search, active, subscription_status } = req.query;
+    let { search, active, subscription_status, oneTimePayment } = req.query;
     const userId = req.user._id;
     const groups = await GroupModel.getGroups(
       userId,
@@ -180,7 +214,8 @@ exports.getGroups = async (req, res) => {
       limit,
       search ?? "",
       active ?? null,
-      subscription_status ?? null
+      subscription_status ?? null,
+      oneTimePayment !== undefined ? oneTimePayment : null
     );
     return BuildHttpResponse(
       res,
@@ -224,35 +259,38 @@ exports.requestToJoinGroup = async (req, res) => {
     const { groupCode, message } = req.body;
     const userId = req.user._id;
 
-    const group = await GroupModel.findbyGroupCode(groupCode);
+    // Find the group by its groupCode
+    const group = await GroupModel.findOne({ groupCode });
     if (!group) {
       return BuildHttpResponse(res, 404, "Group not found");
     }
 
+    // Check if the user is already a member
     if (await group.isUserAMember(userId)) {
-      return BuildHttpResponse(
-        res,
-        400,
-        "You are already a member of this group"
-      );
+      return BuildHttpResponse(res, 400, "You are already a member of this group");
     }
 
-    if (group?.members?.length >= group?.numberOfMembers) {
+    // Check if the group is full
+    if (group.members.length >= group.numberOfMembers) {
       return BuildHttpResponse(res, 400, "Group is full");
     }
 
-    // Add join request to the group
-    await group.addJoinRequest({ userId, message });
+    // Check if the user already has a pending join request
+    const existingRequest = group.joinRequests.find(request => request.user.toString() === userId.toString());
+    if (existingRequest) {
+      return BuildHttpResponse(res, 400, "You already have a pending request. Please wait for the admin to accept you.");
+    }
 
-    return BuildHttpResponse(
-      res,
-      200,
-      "Request to join group sent successfully"
-    );
+    // Add join request to the group
+    group.joinRequests.push({ user: userId, message });
+    await group.save();
+
+    return BuildHttpResponse(res, 200, "Request to join group sent successfully");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 exports.handleJoinRequest = async (req, res) => {
   try {
@@ -312,10 +350,15 @@ exports.getGroupDetails = async (req, res) => {
     const { groupId } = req.params;
     const userId = req.user._id;
 
+    // Find the group and populate the necessary fields
     const group = await GroupModel.findById(groupId)
       .populate("admin", "username avatarUrl")
       .populate({
         path: "members.user",
+        select: "username avatarUrl",
+      })
+      .populate({
+        path: "joinRequests.user",
         select: "username avatarUrl",
       });
 
@@ -323,18 +366,82 @@ exports.getGroupDetails = async (req, res) => {
       return BuildHttpResponse(res, 404, "Group not found");
     }
 
+    // Find the associated service
     const service = await ServiceModel.findById(group.service);
 
     if (!service) {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
-    const groupDetails = await group.groupDetails(userId, service._id);
+    // Build the group details object, with joinRequests now having user details
+    const groupDetails = {
+      ...group.toObject(),
+      serviceName: service.serviceName,
+      serviceDescription: service.serviceDescription,
+      serviceLogo: service.logoUrl,
+      nextSubscriptionDate: group.nextSubscriptionDate,
+      joinRequests: group.joinRequests.map(request => ({
+        user: {
+          _id: request.user._id,
+          username: request.user.username,
+          avatarUrl: request.user.avatarUrl,
+        },
+        message: request.message,
+        _id: request._id,
+      }))
+    };
+
+    // Check if the requesting user is the admin
+    if (group.admin._id.toString() !== userId.toString()) {
+      // If not the admin, remove the joinRequests field from the response
+      delete groupDetails.joinRequests;
+    }
+
     return BuildHttpResponse(res, 200, "successful", groupDetails);
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
+exports.getGroupsList = async (req, res) => {
+  const { page, limit } = req.pagination;
+  try {
+    const userId = req.user._id;
+
+    // Fetch groups that the user belongs to
+    const groups = await GroupModel.getGroups(
+      userId,
+      page,
+      limit
+    );
+
+    // Fetch latest message and unread count for each group
+    const groupsWithDetails = await Promise.all(groups.results.map(async (group) => {
+      const unreadMessages = await Message.getUnreadMessagesCountByGroup(userId, group._id);
+      const latestMessage = await Message.getLatestMessageByGroup(group._id);
+
+      return {
+        ...group.toObject(),
+        unreadMessages,
+        latestMessage,
+        latestMessageTime: latestMessage ? latestMessage.createdAt : null
+      };
+    }));
+
+    // Sort groups by the latest message timestamp, newest first
+    const sortedGroups = groupsWithDetails.sort((a, b) => {
+      return new Date(b.latestMessageTime) - new Date(a.latestMessageTime);
+    });
+
+    return BuildHttpResponse(res, 200, "Groups fetched successfully", {
+      groups: sortedGroups,
+      pagination: groups.pagination
+    });
+  } catch (error) {
+    return BuildHttpResponse(res, 500, error.message);
+  }
+};
+
 
 exports.getGroupDetailsByCode = async (req, res) => {
   try {

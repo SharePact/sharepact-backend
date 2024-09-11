@@ -160,6 +160,26 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
+// Get user's notification configuration
+exports.getNotificationConfig = async (req, res) => {
+  const userId = req.user._id;
+  
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return BuildHttpResponse(res, 404, "User not found");
+    }
+
+    // Assuming the User model has a method to get notification config
+    const notificationConfig = user.notificationConfig;
+    
+    return BuildHttpResponse(res, 200, "Notification configuration retrieved successfully", notificationConfig);
+  } catch (error) {
+    console.error("Error retrieving notification configuration:", error);
+    return BuildHttpResponse(res, 500, "Internal server error");
+  }
+};
+
 exports.UpdateNotificationConfig = async (req, res) => {
   const userId = req.user._id;
   const {

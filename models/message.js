@@ -57,7 +57,7 @@ const MessageSchema = new Schema(
           .find(query)
           .sort({ _id: -1 }) // Sorting by _id in descending order for cursor-based pagination
           .limit(limit)
-          .populate("sender", "username email")
+          .populate("sender", "username email avatarUrl")
           .exec();
 
         return {
@@ -77,6 +77,18 @@ const MessageSchema = new Schema(
         await newMessage.save();
         return newMessage;
       },
+       // Add the missing getLatestMessageByGroup method
+  async getLatestMessageByGroup(groupId) {
+    const model = mongoose.model(modelName);
+    
+    // Find the latest message in the group sorted by sentAt or _id
+    return model
+      .findOne({ group: groupId })
+      .sort({ sentAt: -1 }) // Sorting by sentAt or createdAt (if using that instead)
+      .populate("sender", "username email")
+      .exec();
+  },
+
       async getUnreadMessagesCount(userId) {
         const model = mongoose.model(modelName);
         const count = await model

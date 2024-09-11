@@ -13,23 +13,26 @@ exports.createGroupSchema = z
       required_error: "service id is required",
     }),
     groupName: string({ required_error: "group name is required" }),
-    subscriptionPlan: string({
-      required_error: "subscription plan is required",
-    }),
+    subscriptionCost: number({ required_error: "subscription cost is required" }),
+
+    // subscriptionPlan: string({
+    //   required_error: "subscription plan is required",
+    // }),
     numberOfMembers: number({
       required_error: "number of members is required",
     }),
     existingGroup: boolean().optional(),
+    oneTimePayment: boolean().optional(),
     nextSubscriptionDate: string().optional(),
   })
   .strict();
 
-exports.subscriptionPlanSchema = z
-  .object({
-    plan: string({ required_error: "plan is required" }),
-    price: number({ required_error: "price is required" }),
-  })
-  .strict();
+// exports.subscriptionPlanSchema = z
+//   .object({
+//     plan: string({ required_error: "plan is required" }),
+//     price: number({ required_error: "price is required" }),
+//   })
+//   .strict();
 
 exports.createServiceSchema = z
   .object({
@@ -37,9 +40,9 @@ exports.createServiceSchema = z
     serviceDescription: string({
       required_error: "service description is required",
     }),
-    subscriptionPlans: array(this.subscriptionPlanSchema, {
-      required_error: "subscription plans is required",
-    }).min(1),
+    // subscriptionPlans: array(this.subscriptionPlanSchema, {
+    //   required_error: "subscription plans is required",
+    // }).min(1),
     currency: string({ required_error: "currency is required" }),
     handlingFees: number({ required_error: "handling fees is required" }),
     categoryId: string({ required_error: "category id is required" }),

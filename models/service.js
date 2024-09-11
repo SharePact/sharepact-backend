@@ -7,7 +7,7 @@ const ServiceSchema = new mongoose.Schema(
   {
     serviceName: { type: String, required: true },
     serviceDescription: { type: String, required: true },
-    subscriptionPlans: { type: Array, required: true },
+    // subscriptionPlans: { type: Array, required: true },
     currency: { type: String, required: true },
     handlingFees: { type: Number, required: true },
     logoUrl: { type: String },
@@ -22,16 +22,16 @@ const ServiceSchema = new mongoose.Schema(
   {
     indexes: [{ fields: { categoryId: 1 } }],
     methods: {
-      async findSubscriptionPlan(planName) {
-        const plan = this?.subscriptionPlans?.find(
-          (p) => p.planName === planName
-        );
-        return plan;
-      },
+      // async findSubscriptionPlan(planName) {
+      //   const plan = this?.subscriptionPlans?.find(
+      //     (p) => p.planName === planName
+      //   );
+      //   return plan;
+      // },
       async updateService({
         serviceName = null,
         serviceDescription = null,
-        subscriptionPlans = null,
+        // subscriptionPlans = null,
         currency = null,
         handlingFees = null,
         categoryId = null,
@@ -44,10 +44,10 @@ const ServiceSchema = new mongoose.Schema(
         if (handlingFees && handlingFees != "")
           this.handlingFees = handlingFees;
         if (categoryId && categoryId != "") this.categoryId = categoryId;
-        if (subscriptionPlans) {
-          const subPlans = JSON.parse(subscriptionPlans);
-          if (subPlans?.length > 0) this.subscriptionPlans = subPlans;
-        }
+        // if (subscriptionPlans) {
+        //   const subPlans = JSON.parse(subscriptionPlans);
+        //   if (subPlans?.length > 0) this.subscriptionPlans = subPlans;
+        // }
 
         if (logoUrl && logoUrl != "") this.logoUrl = logoUrl;
 
@@ -60,7 +60,7 @@ const ServiceSchema = new mongoose.Schema(
       async createService({
         serviceName,
         serviceDescription,
-        subscriptionPlans,
+        // subscriptionPlans,
         currency,
         handlingFees,
         logoUrl,
@@ -70,7 +70,7 @@ const ServiceSchema = new mongoose.Schema(
         const newService = new model({
           serviceName,
           serviceDescription,
-          subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
+          // subscriptionPlans: JSON.parse(subscriptionPlans), // Convert JSON string to array
           currency,
           handlingFees,
           logoUrl,

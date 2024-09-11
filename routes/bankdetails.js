@@ -39,4 +39,10 @@ router.get(
 );
 
 router.get("/verify-payment", bankDetailsController.verifyPayment);
+
+router.get(
+  "/banks",
+  bankDetailsController.getBanks // New route to get list of banks
+);
+
 module.exports = router;

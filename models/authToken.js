@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { getPaginatedResults } = require("../utils/pagination");
 const modelName = "authToken";
 const { generateToken, verifyToken } = require("../utils/auth");
-const authTokenDuration = 1;
+const authTokenDuration = 1 * 24 * 7;
 const authTokenExpiry = `${authTokenDuration}h`;
 
 const AuthTokenSchema = new mongoose.Schema(

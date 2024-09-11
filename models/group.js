@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const { getPaginatedResults } = require("../utils/pagination");
 const ServiceModel = require("../models/service");
+const { updateTimestampPlugin } = require("../utils/mongoose-plugins");
 
 const paymentDeadline = 48;
 const upcomingDeadline = 5 * 24;
@@ -11,12 +12,16 @@ const MemberSchema = new Schema({
   confirmStatus: { type: Boolean, default: false },
   paymentActive: { type: Boolean, default: false },
   lastInvoiceSentAt: { type: Date },
+  addedAt: {
+    type: Date,
+    default: Date.now, // Automatically set the time when a member is added
+  },
 });
 const modelName = "Group";
 
 const GroupSchema = new Schema(
   {
-    planName: { type: String, required: true },
+    // planName: { type: String, required: true },
     service: {
       type: mongoose.Types.ObjectId,
       required: true,
@@ -24,12 +29,12 @@ const GroupSchema = new Schema(
       index: true,
     },
     groupName: { type: String, required: true },
-    subscriptionPlan: { type: String, required: true },
+    // subscriptionPlan: { type: String, required: true },
     numberOfMembers: { type: Number, required: true },
     subscriptionCost: { type: Number, required: true },
     handlingFee: { type: Number, required: true },
     individualShare: { type: Number, required: true },
-    totalCost: { type: Number, required: true },
+    // totalCost: { type: Number, required: true },
     groupCode: { type: String, required: true, unique: true, index: true },
     admin: {
       type: mongoose.Types.ObjectId,
@@ -44,6 +49,7 @@ const GroupSchema = new Schema(
         message: { type: String, required: true },
       },
     ],
+    oneTimePayment: { type: Boolean, default: false },
     existingGroup: { type: Boolean, default: false },
     activated: { type: Boolean, default: false },
     nextSubscriptionDate: { type: Date },
@@ -63,6 +69,7 @@ const GroupSchema = new Schema(
           user: userId,
           subscriptionStatus,
           confirmStatus,
+          addedAt: new Date(),
         });
         await this.save();
         return this;
@@ -155,12 +162,12 @@ const GroupSchema = new Schema(
           serviceName: this.serviceName,
           groupName: this.groupName,
           groupCode: this.groupCode,
-          subscriptionPlan: this.subscriptionPlan,
+          // subscriptionPlan: this.subscriptionPlan,
           numberOfMembers: this.numberOfMembers,
           subscriptionCost: this.subscriptionCost,
           handlingFee: this.handlingFee,
           individualShare: this.individualShare,
-          totalCost: this.totalCost,
+          // totalCost: this.totalCost,
           admin: {
             _id: this.admin._id,
             username: this.admin.username,
@@ -168,11 +175,12 @@ const GroupSchema = new Schema(
           },
           memberCount: this.members.length,
           createdAt: this.createdAt,
-          serviceLogo: service.logoUrl,
-          serviceDescription:
-            service.subscriptionPlans.find(
-              (plan) => plan.planName === this.planName
-            )?.description || [],
+          // serviceLogo: service.logoUrl,
+          // serviceDescription:
+          //   service.subscriptionPlans.find(
+          //     (plan) => plan.planName === this.planName
+          //   )?.description || [],
+          oneTimePayment: { type: Boolean, default: false },
           existingGroup: this.existingGroup,
           activated: this.activated,
           nextSubscriptionDate: this.nextSubscriptionDate, // Include nextSubscriptionDate in response
@@ -245,17 +253,18 @@ const GroupSchema = new Schema(
       },
       async createGroup({
         service,
-        planName,
+        // planName,
         groupName,
-        subscriptionPlan,
+        // subscriptionPlan,
         numberOfMembers,
         subscriptionCost,
         handlingFee,
         individualShare,
-        totalCost,
+        // totalCost,
         groupCode,
         admin,
         members,
+        oneTimePayment,
         existingGroup,
         activated,
         nextSubscriptionDate,
@@ -264,17 +273,18 @@ const GroupSchema = new Schema(
         const model = mongoose.model(modelName);
         const newGroup = new model({
           service,
-          planName,
+          // planName,
           groupName,
-          subscriptionPlan,
+          // subscriptionPlan,
           numberOfMembers,
           subscriptionCost,
           handlingFee,
           individualShare,
-          totalCost,
+          // totalCost,
           groupCode,
           admin,
           members,
+          oneTimePayment,
           existingGroup,
           activated,
           nextSubscriptionDate,
@@ -299,7 +309,8 @@ const GroupSchema = new Schema(
         limit = 10,
         search = "",
         active = null,
-        subscriptionStatus = null
+        subscriptionStatus = null,
+        oneTimePayment = null
       ) {
         const model = mongoose.model(modelName);
 
@@ -310,11 +321,13 @@ const GroupSchema = new Schema(
         if (active) {
           query.activated = active;
         }
-
+        if (oneTimePayment !== null) {
+          query.oneTimePayment = oneTimePayment;
+        }
         // Add search filter to the query if it exists
         if (search) {
           query.$or = [
-            { planName: new RegExp(search, "i") }, // case-insensitive regex match
+            // { planName: new RegExp(search, "i") }, // case-insensitive regex match
             { groupName: new RegExp(search, "i") }, // case-insensitive regex match
           ];
         }
@@ -324,6 +337,16 @@ const GroupSchema = new Schema(
             $elemMatch: { user: userId, subscriptionStatus },
           };
         }
+
+        // Determine the sorting order based on the user role
+        let sortOption = { updatedAt: -1 };
+        // const isAdmin = await model.exists({ admin: userId });
+        // if (isAdmin) {
+        //   // Sort by group creation date (newest first) if the user is the admin
+        //   sortOption["createdAt"] = -1;
+        // }
+        // Sort by when the user was added to the group if they are a member
+        const memberSort = { "members.addedAt": -1 };
 
         const options = {
           populate: [
@@ -336,6 +359,10 @@ const GroupSchema = new Schema(
               select: "serviceName logoUrl",
             },
           ],
+          sort: {
+            ...sortOption,
+            ...memberSort,
+          },
         };
 
         const result = await getPaginatedResults(
@@ -503,7 +530,7 @@ const GroupSchema = new Schema(
           {
             $project: {
               groupName: 1,
-              planName: 1,
+              // planName: 1,
               members: 1,
               payments: 1,
               "admin.email": 1,
@@ -517,6 +544,12 @@ const GroupSchema = new Schema(
     },
   }
 );
+GroupSchema.index({
+  "members.lastInvoiceSentAt": 1,
+  "members.paymentActive": 1,
+});
+
+GroupSchema.plugin(updateTimestampPlugin);
 const Group = mongoose.model(modelName, GroupSchema);
 
 module.exports = Group;
