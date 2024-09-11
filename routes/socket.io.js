@@ -2,6 +2,7 @@ const http = require("http");
 const socketIo = require("socket.io");
 const { getUserFromToken } = require("../middleware/checkAuth");
 const Message = require("../models/message");
+const inAppNotificationService = require("../notification/inapp");
 class Messaging {
   constructor(app) {
     // this.server = http.createServer(app);
@@ -100,6 +101,16 @@ class Messaging {
               sentAt: msg.sentAt,
             },
             user: msg.sender, // Fully populated sender details
+          });
+
+          await inAppNotificationService.sendNotification({
+            medium: "group",
+            exemptUsers: [socket.user._id],
+            topicTokenOrGroupId: room,
+            name: "messageReceived",
+            userId: socket.user._id,
+            groupId: room,
+            chatMessageId: msg._id,
           });
         }
       );

@@ -6,6 +6,7 @@ const Flutterwave = require("../utils/flutterwave");
 const BankDetails = require("../models/bankdetails");
 const PaymentModel = require("../models/payment");
 const { v4: uuidv4 } = require("uuid");
+const inAppNotificationService = require("../notification/inapp");
 // const pMap = require("p-map");
 // import pMap from "p-map";
 let pMap;
@@ -13,7 +14,6 @@ let pMap;
   pMap = (await import("p-map")).default;
   // Your code here
 })();
-console.log({ pMap });
 
 exports.recurringInvoices = async (req, res) => {
   try {
@@ -53,6 +53,15 @@ exports.checkMembersPayments = async (req, res) => {
             username: inactiveMember.username,
             groupName: group.groupName,
           });
+          if (inactiveMember?.user?.deviceToken) {
+            await inAppNotificationService.sendNotification({
+              medium: "token",
+              topicTokenOrGroupId: inactiveMember?.user?.deviceToken,
+              name: "removalFromSubscriptionGroup",
+              userId: inactiveMember?.user?._id,
+              groupId: group._id,
+            });
+          }
 
           await NotificationService.sendNotification({
             type: "memberRemovalUpdateForCreator",
@@ -63,6 +72,16 @@ exports.checkMembersPayments = async (req, res) => {
             groupName: group.groupName,
             content: `Your member ${inactiveMember.username} has been removed from ${group.groupName}`,
           });
+          if (group?.admin?.deviceToken) {
+            await inAppNotificationService.sendNotification({
+              medium: "token",
+              topicTokenOrGroupId: group?.admin?.deviceToken,
+              name: "memberRemovalUpdateForCreator",
+              userId: group.admin._id,
+              groupId: group._id,
+              memberId: inactiveMember?.user?._id,
+            });
+          }
         }
       },
       { concurrency: 100 }
@@ -88,15 +107,34 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
             username: inactiveMember.user.username,
             groupName: group.groupName,
           });
+          if (inactiveMember?.user?.deviceToken) {
+            await inAppNotificationService.sendNotification({
+              medium: "token",
+              topicTokenOrGroupId: inactiveMember?.user?.deviceToken,
+              name: "paymentReminder",
+              userId: inactiveMember?.user?._id,
+              groupId: group._id,
+            });
+          }
           await NotificationService.sendNotification({
             type: "memberPaymentReminderForCreator",
             userId: group.admin._id,
             to: [group.admin.email],
-            textContent: `Your member ${inactiveMember.username} from ${group.groupName} has there subscription payment deadline in 24hrs`,
+            textContent: `Your member ${inactiveMember.username} from ${group.groupName} has their subscription payment deadline in 24hrs`,
             username: group.admin.username,
             groupName: group.groupName,
             memberUsername: inactiveMember.username,
           });
+          if (group?.admin?.deviceToken) {
+            await inAppNotificationService.sendNotification({
+              medium: "token",
+              topicTokenOrGroupId: group?.admin?.deviceToken,
+              name: "memberPaymentReminderForCreator",
+              userId: group.admin._id,
+              groupId: group._id,
+              memberId: inactiveMember?.user?._id,
+            });
+          }
         }
       },
       { concurrency: 100 }
