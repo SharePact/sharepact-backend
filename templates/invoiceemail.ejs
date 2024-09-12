@@ -1,0 +1,86 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <title>Invoice</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+        }
+        p {
+            display: block;
+            margin: 13px 0;
+        }
+    </style>
+</head>
+<body style="background-color:#f9f9f9;">
+    <div style="background-color:#f9f9f9;Margin:0px auto;max-width:600px;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
+            <tbody>
+                <tr>
+                    <td style="background:#fff;background-color:#fff;Margin:0px auto;max-width:600px;">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#fff;background-color:#fff;width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td style="border:#dddddd solid 1px;border-top:0px;padding:20px 0;text-align:center;">
+                                        <div style="text-align:center;">
+                                            <img height="auto" src="<%= logoUrl %>" style="border:0;width:64px;">
+                                        </div>
+                                        <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:28px;font-weight:bold;line-height:1;text-align:center;color:#555;">
+                                            Sharepact Invoice
+                                        </div>
+                                        <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:22px;text-align:left;color:#555;padding:10px 25px;">
+                                            Hello <%= user.username %>,<br/><br/>
+                                            Here's your invoice for the <strong><%= group.groupName %></strong> subscription.
+                                            The total amount due is <strong><%= totalAmount %> <%= currency %></strong>.
+                                        </div>
+                                        <div style="text-align:center;padding:30px 25px;">
+                                            <a href="<%= paymentLink %>" style="background:#2F67F6;color:#ffffff;padding:15px 25px;border-radius:3px;text-decoration:none;font-family:'Helvetica Neue',Arial,sans-serif;">Proceed to Your Account</a>
+                                        </div>
+                                        <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:20px;text-align:left;color:#525252;padding:10px 25px;">
+                                            Best regards,<br><br> Obiekwe Chinaza <br>Sharepact Ltd., CEO and Founder<br>
+                                            <a href="https://sharepact.com" style="color:#2F67F6">sharepact.com</a>
+                                        </div>
+                                        <div style="text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#575757;">
+                                            Sharepact Ltd, Lagos, Nigeria
+                                        </div>
+                                        <div style="text-align:center;padding:10px;">
+                                            <a href="<%= twitterLink %>" target="_blank">
+                                                <img src="<%= twitterLogoUrl %>" alt="Twitter" width="24" height="24">
+                                            </a>
+                                            <a href="<%= instagramLink %>" target="_blank">
+                                                <img src="<%= instagramLogoUrl %>" alt="Instagram" width="24" height="24">
+                                            </a>
+                                            <a href="<%= linkedinLink %>" target="_blank">
+                                                <img src="<%= linkedinLogoUrl %>" alt="LinkedIn" width="24" height="24">
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

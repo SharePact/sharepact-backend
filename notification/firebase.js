@@ -1,4 +1,5 @@
 const firebaseAdmin = require("firebase-admin");
+require("dotenv").config();
 
 class FirebaseService {
   static initApp() {
