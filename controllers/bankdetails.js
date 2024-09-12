@@ -104,9 +104,9 @@ exports.deleteBankDetails = async (req, res) => {
 
 exports.verifyPayment = async (req, res) => {
   try {
-    // let { trxref, reference } = req.query;
     let { tx_ref, transaction_id } = req.query;
 
+    // Retrieve payment info using the reference
     const payment = await PaymentModel.getPaymentByReference(tx_ref);
     if (!payment)
       return res
@@ -115,45 +115,53 @@ exports.verifyPayment = async (req, res) => {
           '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">Invalid payment info</p>'
         );
 
-    if (payment?.status == "successful")
+    // Check if the payment has already been marked successful
+    if (payment?.status === "successful")
       return res
         .status(400)
         .send(
           '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">Payment details have already been used</p>'
         );
 
+    // Fetch the group using the group ID from the payment info
     const group = await GroupModel.findById(payment.group);
     if (!group)
       return res
         .status(400)
         .send(
-          '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">group not found</p>'
+          '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">Group not found</p>'
         );
 
+    // Check if the user is a member of the group
     const member = await group.findMemberById(payment.user);
     if (!member)
       return res
         .status(400)
         .send(
-          '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">you are not a member of the group</p>'
+          '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">You are not a member of the group</p>'
         );
 
+    // Verify the payment with Flutterwave
     const pResponse = await Flutterwave.verify(transaction_id);
     if (pResponse.status) {
+      // Update the member's subscription and payment status
       await group.updateMemberSubscriptionStatus(payment.user, "active");
-      await group.updateMemberPaymentActiveState(user._id, true);
+      await group.updateMemberPaymentActiveState(payment.user, true); // Use payment.user instead of user._id
       await payment.updateStatus("successful");
     } else {
+      // Update payment status to failed if the verification was unsuccessful
       await payment.updateStatus("failed");
     }
 
+    // Handle payment failure
     if (!pResponse.status)
       return res
         .status(400)
         .send(
-          '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">payment failed</p>'
+          '<p style="color: red; font-weight: bold; text-align: center; font-size: 20px;">Payment failed</p>'
         );
 
+    // Return success message
     return res
       .status(200)
       .send(
