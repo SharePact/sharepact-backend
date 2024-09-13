@@ -19,6 +19,16 @@ exports.recurringInvoices = async (req, res) => {
   try {
     const groups = await GroupModel.findGroupsWithUpcomingSubscriptionDates();
 
+    // Check if groups is an array and has elements
+    if (!Array.isArray(groups) || groups.length === 0) {
+      console.error("No groups found for upcoming subscriptions.");
+      return BuildHttpResponse(
+        res,
+        200,
+        "No groups found for upcoming subscriptions."
+      );
+    }
+
     await pMap(
       groups,
       async (group) => {

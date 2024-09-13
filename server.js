@@ -8,6 +8,7 @@ const PaymentInvoiceService = require("./notification/payment_invoice");
 const InAppNotificationService = require("./notification/inapp");
 
 require("dotenv").config();
+require("./middleware/cronQueue.js");
 
 mongoose
   .connect(process.env.MONGODB_URI)

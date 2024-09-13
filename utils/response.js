@@ -15,7 +15,7 @@ const BuildHttpResponse = (
     responseObject = { code, message, data };
   }
 
-  return res.status(code).json(responseObject);
+  return res?.status(code)?.json(responseObject);
 };
 
 module.exports = {
