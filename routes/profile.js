@@ -1,6 +1,6 @@
 const express = require("express");
 const profileController = require("../controllers/profile");
-const { checkAuth } = require("../middleware/checkAuth");
+const { checkAuth } = require("../middleware/checkauth");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 const { updateNotificationConfigSchema } = require("../zodSchemas/index");
 

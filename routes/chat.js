@@ -1,6 +1,6 @@
 const express = require("express");
 const ChatController = require("../controllers/chat");
-const { checkAuth } = require("../middleware/checkAuth");
+const { checkAuth } = require("../middleware/checkauth");
 const { markMessagesAsReadSchema } = require("../zodSchemas/index");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 
