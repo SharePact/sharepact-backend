@@ -5,11 +5,10 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test_build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -18,15 +17,15 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm test
 
   docker-build:
     runs-on: ubuntu-latest
@@ -47,13 +46,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/sharepact-be:${{ github.sha }} .
-          docker tag ${{ secrets.DOCKER_USERNAME }}/sharepact-be:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/sharepact-be:latest
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:${{ github.sha }} .
+          docker tag ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:latest
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/sharepact-be:${{ github.sha }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/sharepact-be:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -68,8 +66,6 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/sharepact-be:latest
-            docker stop sharepact-be || true
-            docker rm sharepact-be || true
-            docker run -d --name sharepact-be -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/sharepact-be:latest
-
+            docker pull ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:latest
+            docker compose down sharepact-backend
+            docker compose up -d --force-recreate sharepact-backend

@@ -1,8 +1,8 @@
 const express = require("express");
 const multer = require("../config/multer");
 const categoryController = require("../controllers/category");
-const { checkAuth } = require("../middleware/checkAuth");
-const checkAdmin = require("../middleware/checkAdmin");
+const { checkAuth } = require("../middleware/checkauth");
+const checkAdmin = require("../middleware/checkadmin");
 
 const router = express.Router();
 
