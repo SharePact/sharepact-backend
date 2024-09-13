@@ -1,6 +1,6 @@
 const express = require("express");
 const bankDetailsController = require("../controllers/bankdetails");
-const { checkAuth } = require("../middleware/checkAuth");
+const { checkAuth } = require("../middleware/checkauth");
 const { ZodMiddleware } = require("../middleware/zod.middleware");
 const {
   addBankDetailsSchema,

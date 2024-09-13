@@ -69,7 +69,10 @@ class InAppNotificationService {
     }
 
     if (chatMessageId) {
-      const chatMessage = await MessageModel.findById(chatMessageId);
+      const chatMessage = await MessageModel.findById(chatMessageId).populate(
+        "sender",
+        "username avatarUrl email"
+      );
       obj = { ...obj, chatMessage };
     }
 
