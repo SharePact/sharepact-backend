@@ -46,7 +46,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:${{ github.sha }} .
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:${{ github.sha }} .
           docker tag ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:latest
 
       - name: Push Docker image
