@@ -9,6 +9,13 @@ exports.joinWaitlist = async (req, res) => {
   }
 
   try {
+    // Check if the email already exists in the waitlist
+    const existingEntry = await Waitlist.findOne({ email });
+    if (existingEntry) {
+      return BuildHttpResponse(res, 400, "This email is already on the waitlist");
+    }
+
+    // If no duplicate is found, create a new waitlist entry
     const waitlistEntry = await Waitlist.createWaitlist({ name, email });
     return BuildHttpResponse(
       res,
@@ -20,6 +27,7 @@ exports.joinWaitlist = async (req, res) => {
     return BuildHttpResponse(res, 500, err.message);
   }
 };
+
 
 exports.getAllWaitlistEntries = async (req, res) => {
   const { page, limit } = req.pagination;
