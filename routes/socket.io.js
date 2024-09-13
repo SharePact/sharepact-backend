@@ -1,6 +1,6 @@
 const http = require("http");
 const socketIo = require("socket.io");
-const { getUserFromToken } = require("../middleware/checkAuth");
+const { getUserFromToken } = require("../middleware/checkauth");
 const Message = require("../models/message");
 const inAppNotificationService = require("../notification/inapp");
 class Messaging {
