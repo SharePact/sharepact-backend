@@ -1,7 +1,7 @@
 const express = require("express");
 const waitlistController = require("../controllers/waitlist");
 const { checkAuth } = require("../middleware/checkauth");
-const checkAdmin = require("../middleware/checkAdmin");
+const checkAdmin = require("../middleware/checkadmin");
 
 const router = express.Router();
 
