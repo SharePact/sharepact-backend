@@ -261,7 +261,6 @@ exports.deleteGroup = async (req, res) => {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
-
 exports.requestToJoinGroup = async (req, res) => {
   try {
     const { groupCode, message } = req.body;
@@ -306,18 +305,29 @@ exports.requestToJoinGroup = async (req, res) => {
     group.joinRequests.push({ user: userId, message });
     await group.save();
 
+    // Log the user and admin's device token
+    console.log("User ID for join request:", req.user?._id);  // Log the user making the request
+    console.log("Admin device token:", group?.admin?.deviceToken);  // Log the admin's device token
+
     if (group?.admin?.deviceToken) {
-      await inAppNotificationService.sendNotification({
-        medium: "token",
-        topicTokenOrGroupId: group?.admin?.deviceToken,
-        name: "joinrequest",
-        userId: req.user._id, 
-        groupId: group._id,
-        memberId: userId,
-      });
+      try {
+        await inAppNotificationService.sendNotification({
+          medium: "token",
+          topicTokenOrGroupId: group?.admin?.deviceToken,
+          name: "joinrequest",
+          userId: req.user._id,
+          groupId: group._id,
+          memberId: userId,
+        });
+        console.log("In-app notification sent successfully.");
+      } catch (error) {
+        console.error("Failed to send in-app notification:", error.message);
+      }
+    } else {
+      console.log("No device token found for the admin.");
     }
 
-    // Send notification to the admin
+    // Send email notification to the admin
     await NotificationService.sendNotification({
       type: "joinrequest",
       userId: group.admin._id,
@@ -327,6 +337,7 @@ exports.requestToJoinGroup = async (req, res) => {
       groupName: group.groupName,
       content: `A member ${req.user.username} wants to join your group ${group.groupName}`,
     });
+
     return BuildHttpResponse(
       res,
       200,
@@ -336,6 +347,7 @@ exports.requestToJoinGroup = async (req, res) => {
     return BuildHttpResponse(res, 500, error.message);
   }
 };
+
 
 exports.handleJoinRequest = async (req, res) => {
   try {

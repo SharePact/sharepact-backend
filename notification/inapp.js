@@ -8,7 +8,6 @@ let pMap;
 (async () => {
   pMap = (await import("p-map")).default;
 })();
-
 class InAppNotificationService {
   static async sendNotification({
     medium = "token",
@@ -73,52 +72,54 @@ class InAppNotificationService {
         "sender",
         "username avatarUrl email"
       );
- // Ensure the sender is only added to the exemptUsers list once
- if (!exemptUsers.includes(chatMessage?.sender?._id.toString())) {
-  exemptUsers.push(chatMessage?.sender?._id.toString());
-}
+      // Ensure the sender is only added to the exemptUsers list once
+      if (!exemptUsers.includes(chatMessage?.sender?._id.toString())) {
+        exemptUsers.push(chatMessage?.sender?._id.toString());
+      }
       obj = { ...obj, chatMessage };
     }
- 
+
+    // Construct the notification in a structured way (no JSON.stringify)
     const notification = await InAppNotificationService.getNotification(obj);
 
-    const message = JSON.stringify(notification);
-
-    if (medium == "topic") {
+    if (medium === "topic") {
       await FirebaseService.sendNotificationToTopic(
         topicTokenOrGroupId,
-        notification?.subject,
-        message
+        notification.subject,  // Title of the notification
+        notification.body || notification.notificationMessage,  // Message body
+        notification.data  // Optional data payload
       );
     } else if (["group", "token"].includes(medium)) {
-      let recepientTokens = [];
-      if (medium == "group") {
+      let recipientTokens = [];
+      if (medium === "group") {
         const group = await GroupModel.findById(topicTokenOrGroupId).populate({
           path: "members.user",
           select: "username email deviceToken",
         });
         for (const m of group?.members) {
           if (
-            exemptUsers.includes(m?.user?._id.toString()) || exemptUsers.includes(m?.user.toString())
-
+            exemptUsers.includes(m?.user?._id.toString()) ||
+            exemptUsers.includes(m?.user.toString())
           )
             continue;
 
-          if (m?.user?.deviceToken && m?.user?.deviceToken != "") {
-            recepientTokens.push(m?.user?.deviceToken);
+          if (m?.user?.deviceToken && m?.user?.deviceToken !== "") {
+            recipientTokens.push(m?.user?.deviceToken);
           }
         }
-      } else if (medium == "token") {
-        recepientTokens.push(topicTokenOrGroupId);
+      } else if (medium === "token") {
+        recipientTokens.push(topicTokenOrGroupId);
       }
 
+      // Send the notification to recipient tokens
       await pMap(
-        recepientTokens,
-        async (recepientToken) => {
+        recipientTokens,
+        async (recipientToken) => {
           await FirebaseService.sendNotification(
-            recepientToken,
-            notification?.subject,
-            message
+            recipientToken,
+            notification.subject,  // Title of the notification
+            notification.body || notification.notificationMessage,  // Message body
+            notification.data  // Optional data payload
           );
         },
         { concurrency: 100 }
@@ -126,27 +127,31 @@ class InAppNotificationService {
     }
   }
 
+  // Function to construct the notification object
   static async getNotification({ name, group, user, chatMessage, memberUser }) {
     let notification = { name, subject: name };
 
     switch (name) {
       case "messageReceived":
         notification = {
-          subject: "message received",
-          type: "chat",
-          group,
-          user,
-          message: chatMessage,
+          subject: "New message received",
+          body: `${chatMessage?.sender?.username}: ${chatMessage?.content}`,
+          data: {
+            type: "chat",
+            groupId: group._id,
+            sender: chatMessage?.sender?.username,
+            content: chatMessage?.content,
+          },
         };
         break;
       case "joinrequest":
         notification = {
           subject: `${memberUser.username} requested to join ${group.groupName}`,
-          type: "notification",
-          group,
-          user,
-          memberUser,
-          notificationMessage: `${memberUser.username} requested to join ${group.groupName}`,
+          body: `${memberUser.username} requested to join ${group.groupName}`,
+          data: {
+            type: "notification",
+            groupId: group._id,
+          },
         };
         break;
       case "joinRequestAccepted":
@@ -169,7 +174,7 @@ class InAppNotificationService {
         break;
       case "loginAlert":
         notification = {
-          subject: `you logged in successfully`,
+          subject: `Login notification`,
           type: "notification",
           user,
           notificationMessage: `you logged in successfully`,

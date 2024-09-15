@@ -22,21 +22,50 @@ class FirebaseService {
       firebaseAdmin.initializeApp({
         credential: firebaseAdmin.credential.cert(firebaseConfig),
       });
-      console.log("initializing firebase app was successful!!!");
+      console.log("Firebase app initialization was successful!");
     } catch (error) {
-      console.error("initializing firebase app failed!!!");
+      console.error("Firebase app initialization failed!", error);
     }
   }
-
-  static async sendNotification(deviceToken, title, body) {
+  static async sendNotification(deviceToken, title, body, data = {}) {
     const message = {
+      token: deviceToken, // FCM token of the target device
       notification: {
         title: title,
         body: body,
       },
-      token: deviceToken, // FCM token of the target device
+      // Comment out the data field if not needed to prevent double notifications
+      // data: data, 
+  
+      // iOS-specific payload
+      apns: {
+        headers: {
+          'apns-priority': '10',
+        },
+        payload: {
+          aps: {
+            alert: {
+              title: title,
+              body: body,
+            },
+            sound: "default",
+            badge: 1,
+            "content-available": 1,
+          },
+        },
+      },
+  
+      // Android-specific payload
+      android: {
+        priority: "high",
+        notification: {
+          title: title,
+          body: body,
+          sound: "default",
+        },
+      },
     };
-
+  
     try {
       const response = await firebaseAdmin.messaging().send(message);
       console.log("Successfully sent message:", response);
@@ -44,14 +73,46 @@ class FirebaseService {
       console.error("Error sending message:", error);
     }
   }
+  
 
-  static async sendNotificationToTopic(topic, title, body) {
+
+  static async sendNotificationToTopic(topic, title, body, data = {}) {
     const message = {
+      topic: topic, // FCM topic
+
       notification: {
         title: title,
         body: body,
       },
-      topic: topic,
+      data: data,  // Add custom data here (optional)
+
+      // iOS-specific payload
+      apns: {
+        headers: {
+          'apns-priority': '10', // High priority for iOS notifications
+        },
+        payload: {
+          aps: {
+            alert: {
+              title: title,
+              body: body,
+            },
+            sound: "default",  // Ensures sound plays on iOS
+            badge: 1,  // Badge on app icon
+            "content-available": 1,  // Allows background notifications
+          },
+        },
+      },
+
+      // Android-specific payload
+      android: {
+        priority: "high",  // High priority for Android notifications
+        notification: {
+          title: title,
+          body: body,
+          sound: "default",  // Play sound on Android
+        },
+      },
     };
 
     try {
