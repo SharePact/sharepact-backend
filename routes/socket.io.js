@@ -105,10 +105,10 @@ class Messaging {
 
           await inAppNotificationService.sendNotification({
             medium: "group",
-            exemptUsers: [socket.user._id],
+            exemptUsers: [msg.sender._id],
             topicTokenOrGroupId: room,
             name: "messageReceived",
-            userId: socket.user._id,
+            userId: msg.sender._id,
             groupId: room,
             chatMessageId: msg._id,
           });

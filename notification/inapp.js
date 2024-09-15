@@ -73,6 +73,7 @@ class InAppNotificationService {
         "sender",
         "username avatarUrl email"
       );
+      exemptUsers.push(chatMessage?.sender?._id);
       obj = { ...obj, chatMessage };
     }
 
@@ -94,7 +95,11 @@ class InAppNotificationService {
           select: "username email deviceToken",
         });
         for (const m of group?.members) {
-          if (exemptUsers.includes(m?.user?._id)) continue;
+          if (
+            exemptUsers.includes(m?.user?._id) ||
+            exemptUsers.includes(m?.user)
+          )
+            continue;
 
           if (m?.user?.deviceToken && m?.user?.deviceToken != "") {
             recepientTokens.push(m?.user?.deviceToken);
