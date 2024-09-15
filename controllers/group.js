@@ -311,7 +311,7 @@ exports.requestToJoinGroup = async (req, res) => {
         medium: "token",
         topicTokenOrGroupId: group?.admin?.deviceToken,
         name: "joinrequest",
-        userId: user._id,
+        userId: req.user._id, 
         groupId: group._id,
         memberId: userId,
       });
