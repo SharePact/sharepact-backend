@@ -102,15 +102,18 @@ class Messaging {
             },
             user: msg.sender, // Fully populated sender details
           });
+// Extract the sender details and ensure they are added to the exempt list
+const exemptUsers = [msg.sender._id.toString()];
+
 
           await inAppNotificationService.sendNotification({
             medium: "group",
             exemptUsers: [msg.sender._id],
             topicTokenOrGroupId: room,
             name: "messageReceived",
-            userId: msg.sender._id,
-            groupId: room,
-            chatMessageId: msg._id,
+            userId: msg.sender._id.toString(),
+           groupId: room,
+            chatMessageId: msg._id.toString(),
           });
         }
       );
@@ -139,3 +142,4 @@ class Messaging {
 }
 
 module.exports = Messaging;
+

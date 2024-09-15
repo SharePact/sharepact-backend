@@ -73,10 +73,13 @@ class InAppNotificationService {
         "sender",
         "username avatarUrl email"
       );
-      exemptUsers.push(chatMessage?.sender?._id);
+ // Ensure the sender is only added to the exemptUsers list once
+ if (!exemptUsers.includes(chatMessage?.sender?._id.toString())) {
+  exemptUsers.push(chatMessage?.sender?._id.toString());
+}
       obj = { ...obj, chatMessage };
     }
-
+ 
     const notification = await InAppNotificationService.getNotification(obj);
 
     const message = JSON.stringify(notification);
@@ -95,11 +98,14 @@ class InAppNotificationService {
           select: "username email deviceToken",
         });
         for (const m of group?.members) {
-          const userId = m?.user?._id;
-          if (!exemptUsers.includes(userId)) {
-            if (m?.user?.deviceToken && m?.user?.deviceToken != "") {
-              recepientTokens.push(m?.user?.deviceToken);
-            }
+          if (
+            exemptUsers.includes(m?.user?._id.toString()) || exemptUsers.includes(m?.user.toString())
+
+          )
+            continue;
+
+          if (m?.user?.deviceToken && m?.user?.deviceToken != "") {
+            recepientTokens.push(m?.user?.deviceToken);
           }
         }
       } else if (medium == "token") {
@@ -225,3 +231,4 @@ class InAppNotificationService {
 }
 
 module.exports = InAppNotificationService;
+
