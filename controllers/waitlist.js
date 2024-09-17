@@ -1,5 +1,6 @@
 const Waitlist = require("../models/waitlist");
 const { BuildHttpResponse } = require("../utils/response");
+const mongoose = require("mongoose");
 
 exports.joinWaitlist = async (req, res) => {
   const { name, email } = req.body;
@@ -12,7 +13,11 @@ exports.joinWaitlist = async (req, res) => {
     // Check if the email already exists in the waitlist
     const existingEntry = await Waitlist.findOne({ email });
     if (existingEntry) {
-      return BuildHttpResponse(res, 400, "This email is already on the waitlist");
+      return BuildHttpResponse(
+        res,
+        400,
+        "This email is already on the waitlist"
+      );
     }
 
     // If no duplicate is found, create a new waitlist entry
@@ -28,10 +33,9 @@ exports.joinWaitlist = async (req, res) => {
   }
 };
 
-
 exports.getAllWaitlistEntries = async (req, res) => {
   const { page, limit } = req.pagination;
-  
+
   try {
     const waitlistEntries = await Waitlist.getWaitlists(page, limit);
     return BuildHttpResponse(
@@ -47,9 +51,12 @@ exports.getAllWaitlistEntries = async (req, res) => {
 };
 
 exports.getWaitlistEntryById = async (req, res) => {
-  const { id } = req.params;
-
-
+  let id;
+  try {
+    id = new mongoose.Types.ObjectId(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "invalid waitlist id");
+  }
 
   try {
     const waitlistEntry = await Waitlist.findOne({ _id: id });
@@ -62,4 +69,3 @@ exports.getWaitlistEntryById = async (req, res) => {
     return BuildHttpResponse(res, 500, err.message);
   }
 };
-

@@ -7,6 +7,7 @@ const BankDetails = require("../models/bankdetails");
 const PaymentModel = require("../models/payment");
 const { v4: uuidv4 } = require("uuid");
 const inAppNotificationService = require("../notification/inapp");
+const mongoose = require("mongoose");
 // const pMap = require("p-map");
 // import pMap from "p-map";
 let pMap;

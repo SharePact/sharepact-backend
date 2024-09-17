@@ -2,6 +2,7 @@ const GroupModel = require("../models/group");
 const Message = require("../models/message");
 const { BuildHttpResponse } = require("../utils/response");
 const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 
 exports.getMessagesByGroup = async (req, res) => {
   let groupId = new ObjectId();

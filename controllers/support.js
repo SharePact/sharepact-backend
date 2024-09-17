@@ -1,5 +1,6 @@
 const SupportTicketModel = require("../models/support");
 const { BuildHttpResponse } = require("../utils/response");
+const mongoose = require("mongoose");
 exports.contactSupport = async (req, res) => {
   const { name, email, message } = req.body;
   try {

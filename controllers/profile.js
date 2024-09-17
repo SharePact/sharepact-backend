@@ -5,6 +5,7 @@ const AuthTokenModel = require("../models/authToken");
 const NotificationModel = require("../models/Notifications");
 const NotificationService = require("../notification/index");
 const inAppNotificationService = require("../notification/inapp");
+const mongoose = require("mongoose");
 
 // Predefined avatar URLs
 const avatarUrls = [
