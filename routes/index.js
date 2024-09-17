@@ -1,6 +1,7 @@
 const express = require("express");
 const authRoutes = require("./auth");
 const waitlistRoutes = require("./waitlist");
+const requestDeleteRoutes = require("./requestDelete");
 const categoryRoutes = require("./category");
 const serviceRoutes = require("./service");
 const profileRoutes = require("./profile");
@@ -30,6 +31,7 @@ class Router {
     });
     baseRouter.use("/auth", authRoutes);
     baseRouter.use("/api/waitlist", waitlistRoutes);
+    baseRouter.use("/api/request-delete", requestDeleteRoutes);
     baseRouter.use("/api/categories", categoryRoutes);
     baseRouter.use("/api/services", serviceRoutes);
     baseRouter.use("/api/profile", profileRoutes);
