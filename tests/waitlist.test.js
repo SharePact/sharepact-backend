@@ -5,7 +5,11 @@ const request = require("supertest");
 const Waitlist = require("../models/waitlist");
 const User = require("../models/user");
 const AuthToken = require("../models/authToken");
-const { createAuthToken, createUser, createWaitlist } = require("./test-utils"); // Import helper functions
+const {
+  createAuthToken,
+  createUser,
+  createWaitlist,
+} = require("./test-utils.js"); // Import helper functions
 const Server = require("../middleware/index.js");
 const Router = require("../routes/index.js");
 

@@ -1,168 +1,221 @@
+const mongoose = require("mongoose");
 const request = require("supertest");
-const express = require("express");
-const supportController = require("../controllers/support");
 const SupportTicketModel = require("../models/support");
-const { BuildHttpResponse } = require("../utils/response");
+const Server = require("../middleware/index.js");
+const Router = require("../routes/index.js");
 
-jest.mock("../models/support");
-jest.mock("../utils/response");
+describe("Support Ticket API Endpoints", () => {
+  let app;
 
-const app = express();
-app.use(express.json());
+  beforeAll(async () => {
+    mongoose
+      .connect(process.env.MONGODB_TEST_URI)
+      .then(() => console.log("MongoDB connected..."))
+      .catch((err) => console.error("MongoDB connection error:", err));
 
-app.post("/support/contact", supportController.contactSupport);
-app.get("/support/requests", supportController.getContactSupportRequests);
-app.get("/support/request/:id", supportController.getContactSupportRequest);
-app.patch(
-  "/support/request/:id/resolve",
-  supportController.resolveContactSupportRequest
-);
+    const server = new Server(new Router());
+    app = server.getApp();
+  }, 100000);
 
-describe("Support Controller", () => {
-  beforeEach(() => {
-    jest.clearAllMocks(); // Reset mocks before each test
-  });
+  afterAll(async () => {
+    await mongoose.disconnect();
+  }, 100000);
 
-  describe("contactSupport", () => {
-    it("should create a support ticket and return a success message", async () => {
-      SupportTicketModel.createSupportTicket.mockResolvedValueOnce({});
-      BuildHttpResponse.mockImplementation((res, statusCode, message) =>
-        res.status(statusCode).json({ message })
-      );
+  beforeEach(async () => {
+    await SupportTicketModel.deleteMany({});
+  }, 100000);
 
-      const response = await request(app).post("/support/contact").send({
-        name: "John Doe",
-        email: "john@example.com",
-        message: "Help needed",
+  afterEach(async () => {
+    await SupportTicketModel.deleteMany({});
+  }, 100000);
+
+  describe("POST /support", () => {
+    it("should successfully create a new support ticket", async () => {
+      const name = "Test User";
+      const email = "test@example.com";
+      const message = "This is a test message";
+
+      const res = await request(app)
+        .post("/api/support/contact-support")
+        .send({ name, email, message });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toBeFalsy();
+    });
+
+    it("should return 400 if email is missing", async () => {
+      const name = "Test User";
+      const message = "This is a test message";
+
+      const res = await request(app)
+        .post("/api/support/contact-support")
+        .send({ name, message });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("invalid request payload");
+    });
+
+    it("should return 400 if message is missing", async () => {
+      const name = "Test User";
+      const email = "test@example.com";
+
+      const res = await request(app)
+        .post("/api/support/contact-support")
+        .send({ name, email });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("invalid request payload");
+    });
+  }, 100000);
+
+  describe("GET /support", () => {
+    it("should return a list of support tickets", async () => {
+      const ticket1 = await SupportTicketModel.createSupportTicket({
+        name: "Test User 1",
+        email: "test1@example.com",
+        message: "Test message 1",
+      });
+      const ticket2 = await SupportTicketModel.createSupportTicket({
+        name: "Test User 2",
+        email: "test2@example.com",
+        message: "Test message 2",
       });
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body.message).toBe("successful");
-      expect(SupportTicketModel.createSupportTicket).toHaveBeenCalledWith({
-        name: "John Doe",
-        email: "john@example.com",
-        message: "Help needed",
+      const res = await request(app).get("/api/support/contact-support");
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            _id: expect.any(String),
+            name: "Test User 1",
+            email: "test1@example.com",
+            message: "Test message 1",
+            createdAt: expect.any(String), // Assuming createdAt is returned as a string
+            resolved: false,
+          }),
+          expect.objectContaining({
+            _id: expect.any(String),
+            name: "Test User 2",
+            email: "test2@example.com",
+            message: "Test message 2",
+            createdAt: expect.any(String), // Assuming createdAt is returned as a string
+            resolved: false,
+          }),
+        ])
+      );
+    });
+
+    it("should return an empty array if no tickets exist", async () => {
+      const res = await request(app).get("/api/support/contact-support");
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toEqual([]);
+    });
+
+    it("should filter tickets by resolved status", async () => {
+      const ticket1 = await SupportTicketModel.createSupportTicket({
+        name: "Test User 1",
+        email: "test1@example.com",
+        message: "Test message 1",
       });
+      await ticket1.resolveTicket();
+
+      const res = await request(app).get(
+        "/api/support/contact-support?resolved=true"
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            _id: expect.any(String),
+            name: "Test User 1",
+            email: "test1@example.com",
+            message: "Test message 1",
+            createdAt: expect.any(String), // Assuming createdAt is returned as a string
+            resolved: true,
+          }),
+        ])
+      );
     });
+  }, 100000);
 
-    it("should return an error if ticket creation fails", async () => {
-      SupportTicketModel.createSupportTicket.mockRejectedValueOnce(
-        new Error("Database error")
-      );
-      BuildHttpResponse.mockImplementation((res, statusCode, message) =>
-        res.status(statusCode).json({ message })
-      );
-
-      const response = await request(app).post("/support/contact").send({
-        name: "John Doe",
-        email: "john@example.com",
-        message: "Help needed",
+  describe("GET /support/:id", () => {
+    it("should return the support ticket with the given id", async () => {
+      const ticket = await SupportTicketModel.createSupportTicket({
+        name: "Test User",
+        email: "test@example.com",
+        message: "Test message",
       });
 
-      expect(response.statusCode).toBe(500);
-      expect(response.body.message).toBe("Database error");
-    });
-  });
-
-  // describe("getContactSupportRequests", () => {
-  //   it("should return a list of support tickets", async () => {
-  //     const mockTickets = {
-  //       results: [{ id: 1, message: "Test ticket" }],
-  //       pagination: { page: 1, limit: 10 },
-  //     };
-  //     SupportTicketModel.getAllSupportTickets.mockResolvedValueOnce(
-  //       mockTickets
-  //     );
-  //     BuildHttpResponse.mockImplementation(
-  //       (res, statusCode, message, results, pagination) =>
-  //         res.status(statusCode).json({ message, results, pagination })
-  //     );
-
-  //     const response = await request(app)
-  //       .get("/support/requests")
-  //       .query({ resolved: true });
-
-  //     expect(response.statusCode).toBe(200);
-  //     expect(response.body.results).toEqual(mockTickets.results);
-  //     expect(SupportTicketModel.getAllSupportTickets).toHaveBeenCalledWith(
-  //       1,
-  //       10,
-  //       true
-  //     );
-  //   });
-
-  //   it("should return an error if fetching tickets fails", async () => {
-  //     SupportTicketModel.getAllSupportTickets.mockRejectedValueOnce(
-  //       new Error("Database error")
-  //     );
-  //     BuildHttpResponse.mockImplementation((res, statusCode, message) =>
-  //       res.status(statusCode).json({ message })
-  //     );
-
-  //     const response = await request(app).get("/support/requests");
-
-  //     expect(response.statusCode).toBe(500);
-  //     expect(response.body.message).toBe("Database error");
-  //   });
-  // });
-
-  describe("getContactSupportRequest", () => {
-    it("should return the support ticket if found", async () => {
-      const mockTicket = { id: 1, message: "Test ticket" };
-      SupportTicketModel.findById.mockResolvedValueOnce(mockTicket);
-      BuildHttpResponse.mockImplementation((res, statusCode, message, data) =>
-        res.status(statusCode).json({ message, data })
+      const res = await request(app).get(
+        `/api/support/contact-support/${ticket._id.toString()}`
       );
 
-      const response = await request(app).get("/support/request/1");
-
-      expect(response.statusCode).toBe(200);
-      expect(response.body.data).toEqual(mockTicket);
-      expect(SupportTicketModel.findById).toHaveBeenCalledWith("1");
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          _id: expect.any(String),
+          name: "Test User",
+          email: "test@example.com",
+          message: "Test message",
+          createdAt: expect.any(String), // Assuming createdAt is returned as a string
+          resolved: false,
+        })
+      );
     });
 
-    it("should return a 400 error if the ticket is not found", async () => {
-      SupportTicketModel.findById.mockResolvedValueOnce(null);
-      BuildHttpResponse.mockImplementation((res, statusCode, message) =>
-        res.status(statusCode).json({ message })
+    it("should return 400 if support ticket not found", async () => {
+      const invalidId = new mongoose.Types.ObjectId();
+      const res = await request(app).get(
+        `/api/support/contact-support/${invalidId.toString()}`
       );
 
-      const response = await request(app).get("/support/request/1");
-
-      expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("not found");
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("not found");
     });
-  });
+  }, 100000);
 
-  describe("resolveContactSupportRequest", () => {
-    it("should resolve the support ticket if found", async () => {
-      const mockTicket = {
-        id: 1,
-        message: "Test ticket",
-        resolveTicket: jest.fn(),
-      };
-      SupportTicketModel.findById.mockResolvedValueOnce(mockTicket);
-      BuildHttpResponse.mockImplementation((res, statusCode, message, data) =>
-        res.status(statusCode).json({ message, data })
+  describe("PATCH /support/:id", () => {
+    it("should resolve the support ticket with the given id", async () => {
+      const ticket = await SupportTicketModel.createSupportTicket({
+        name: "Test User",
+        email: "test@example.com",
+        message: "Test message",
+      });
+
+      const res = await request(app).patch(
+        `/api/support/contact-support/resolve/${ticket._id.toString()}`
       );
 
-      const response = await request(app).patch("/support/request/1/resolve");
-
-      expect(response.statusCode).toBe(200);
-      expect(mockTicket.resolveTicket).toHaveBeenCalled();
-      expect(response.body.message).toBe("successful");
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toEqual(
+        expect.objectContaining({
+          _id: expect.any(String),
+          name: "Test User",
+          email: "test@example.com",
+          message: "Test message",
+          createdAt: expect.any(String), // Assuming createdAt is returned as a string
+          resolved: true,
+          resolvedAt: expect.any(String), // Assuming resolvedAt is returned as a string
+        })
+      );
     });
 
-    it("should return a 400 error if the ticket is not found", async () => {
-      SupportTicketModel.findById.mockResolvedValueOnce(null);
-      BuildHttpResponse.mockImplementation((res, statusCode, message) =>
-        res.status(statusCode).json({ message })
+    it("should return 400 if support ticket not found", async () => {
+      const invalidId = new mongoose.Types.ObjectId();
+      const res = await request(app).patch(
+        `/api/support/contact-support/resolve/${invalidId.toString()}`
       );
 
-      const response = await request(app).patch("/support/request/1/resolve");
-
-      expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("not found");
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe("not found");
     });
-  });
+  }, 100000);
 });
