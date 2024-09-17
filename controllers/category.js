@@ -48,7 +48,7 @@ exports.getAllCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
   let id = new ObjectId();
   try {
-    id = new ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Category not found");
   }
@@ -68,7 +68,7 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   let id = new ObjectId();
   try {
-    id = new ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Category not found");
   }
@@ -93,7 +93,7 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   let id = new ObjectId();
   try {
-    id = new ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Category not found");
   }

@@ -53,7 +53,7 @@ exports.getAllWaitlistEntries = async (req, res) => {
 exports.getWaitlistEntryById = async (req, res) => {
   let id;
   try {
-    id = new mongoose.Types.ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "invalid waitlist id");
   }
@@ -65,6 +65,50 @@ exports.getWaitlistEntryById = async (req, res) => {
       return BuildHttpResponse(res, 404, "Waitlist entry not found");
     }
     return BuildHttpResponse(res, 200, "Successful", waitlistEntry);
+  } catch (err) {
+    return BuildHttpResponse(res, 500, err.message);
+  }
+};
+
+exports.updateWaitlistEntry = async (req, res) => {
+  let id;
+  try {
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, "Waitlist entry not found");
+  }
+
+  const { name, email } = req.body;
+
+  try {
+    const waitlistEntry = await Waitlist.getById(id);
+    if (!waitlistEntry) {
+      return BuildHttpResponse(res, 404, "Waitlist entry not found");
+    }
+
+    await waitlistEntry.updateWaitlist({ name, email });
+
+    return BuildHttpResponse(res, 200, "Successful", waitlistEntry);
+  } catch (err) {
+    return BuildHttpResponse(res, 500, err.message);
+  }
+};
+
+exports.deleteWaitlistEntry = async (req, res) => {
+  let id;
+  try {
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
+  } catch (err) {
+    console.log(req.params.id, err);
+    return BuildHttpResponse(res, 404, "Waitlist entry not found");
+  }
+
+  try {
+    const waitlistEntry = await Waitlist.findByIdAndDelete(id);
+    if (!waitlistEntry) {
+      return BuildHttpResponse(res, 404, "Waitlist entry not found");
+    }
+    return BuildHttpResponse(res, 200, "Waitlist entry deleted successfully");
   } catch (err) {
     return BuildHttpResponse(res, 500, err.message);
   }
