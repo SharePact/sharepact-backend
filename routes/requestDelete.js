@@ -1,17 +1,16 @@
 const express = require("express");
-const waitlistController = require("../controllers/waitlist");
+const requestDeleteController = require("../controllers/requestDelete");
 const { checkAuth } = require("../middleware/checkauth");
 const checkAdmin = require("../middleware/checkadmin");
 
 const router = express.Router();
 
-router.post("/", waitlistController.joinWaitlist);
+router.post("/", requestDeleteController.joinRequestdelete);
 router.get(
   "/",
   checkAuth,
   checkAdmin,
-  waitlistController.getAllWaitlistEntries
+  requestDeleteController.getrequestdeleteEntries
 );
-router.get("/:id", waitlistController.getWaitlistEntryById);
-
+router.get("/:id", requestDeleteController.getrequestdeleteEntryById);
 module.exports = router;
