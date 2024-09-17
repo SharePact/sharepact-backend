@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { writeOnlyPlugin } = require("../utils/mongoose-plugins");
 const { getPaginatedResults } = require("../utils/pagination");
 
-const modelName = "Service";
+export const serviceModelName = "Service";
 const ServiceSchema = new mongoose.Schema(
   {
     serviceName: { type: String, required: true },

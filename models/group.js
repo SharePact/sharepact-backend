@@ -8,7 +8,7 @@ const paymentDeadline = 48;
 const upcomingDeadline = 5 * 24;
 const MemberSchema = new Schema({
   user: { type: mongoose.Types.ObjectId, ref: "User", index: true },
-  subscriptionStatus: { type: String, default: "inactive" },
+  subscriptionStatus: { type: String, default: "inactive" }, // TODO: switch to defined constants to enable reuse without mistakes of typo
   confirmStatus: { type: Boolean, default: false },
   paymentActive: { type: Boolean, default: false },
   lastInvoiceSentAt: { type: Date },
@@ -25,7 +25,7 @@ const GroupSchema = new Schema(
     service: {
       type: mongoose.Types.ObjectId,
       required: true,
-      ref: "Service",
+      ref: ServiceModel.serviceModelName,
       index: true,
     },
     groupName: { type: String, required: true },
