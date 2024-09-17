@@ -3,6 +3,7 @@ const { BuildHttpResponse } = require("../utils/response");
 const AuthTokenModel = require("../models/authToken");
 const OTPModel = require("../models/otp");
 const { getUserFromToken } = require("../middleware/checkauth");
+const mongoose = require("mongoose");
 
 const NotificationService = require("../notification/index");
 const inAppNotificationService = require("../notification/inapp");

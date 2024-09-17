@@ -4,6 +4,7 @@ const PaymentModel = require("../models/payment");
 const { BuildHttpResponse } = require("../utils/response");
 const GroupModel = require("../models/group");
 const Flutterwave = require("../utils/flutterwave");
+const mongoose = require("mongoose");
 
 exports.addBankDetails = async (req, res) => {
   try {

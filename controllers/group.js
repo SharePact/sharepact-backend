@@ -6,6 +6,7 @@ const PaymentInvoiceService = require("../notification/payment_invoice");
 const NotificationService = require("../notification/index");
 const { BuildHttpResponse } = require("../utils/response");
 const inAppNotificationService = require("../notification/inapp");
+const mongoose = require("mongoose");
 
 const generateGroupCode = async () => {
   let code;
@@ -306,8 +307,8 @@ exports.requestToJoinGroup = async (req, res) => {
     await group.save();
 
     // Log the user and admin's device token
-    console.log("User ID for join request:", req.user?._id);  // Log the user making the request
-    console.log("Admin device token:", group?.admin?.deviceToken);  // Log the admin's device token
+    console.log("User ID for join request:", req.user?._id); // Log the user making the request
+    console.log("Admin device token:", group?.admin?.deviceToken); // Log the admin's device token
 
     if (group?.admin?.deviceToken) {
       try {
@@ -348,7 +349,6 @@ exports.requestToJoinGroup = async (req, res) => {
   }
 };
 
-
 exports.handleJoinRequest = async (req, res) => {
   try {
     // TODO: use zod ZodMiddleware
@@ -387,15 +387,15 @@ exports.handleJoinRequest = async (req, res) => {
         const chatRoom = await ChatRoomModel.findByGroupId(group._id);
         await chatRoom.addMember(userId);
 
-    // Send notification to the user
-    // await NotificationService.sendNotification({
-    //   type: "requestdecision",
-    //   userId: userId,
-    //   to: [req.user.email],
-    //   textContent: ` A decision for your join request on ${group.groupName} has been made`,
-    //   groupName: group.groupName,
-    //   content: ` A decision for your join request on ${group.groupName} has been made`,
-    // });
+        // Send notification to the user
+        // await NotificationService.sendNotification({
+        //   type: "requestdecision",
+        //   userId: userId,
+        //   to: [req.user.email],
+        //   textContent: ` A decision for your join request on ${group.groupName} has been made`,
+        //   groupName: group.groupName,
+        //   content: ` A decision for your join request on ${group.groupName} has been made`,
+        // });
         if (memberRequest?.user?.deviceToken) {
           await inAppNotificationService.sendNotification({
             medium: "token",
@@ -519,7 +519,7 @@ exports.getGroupsList = async (req, res) => {
     const sortedGroups = groupsWithDetails.sort((a, b) => {
       return new Date(b.latestMessageTime) - new Date(a.latestMessageTime);
     });
-    
+
     return BuildHttpResponse(res, 200, "Groups fetched successfully", {
       groups: sortedGroups,
       pagination: groups.pagination,

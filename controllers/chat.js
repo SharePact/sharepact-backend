@@ -2,11 +2,12 @@ const GroupModel = require("../models/group");
 const Message = require("../models/message");
 const { BuildHttpResponse } = require("../utils/response");
 const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 
 exports.getMessagesByGroup = async (req, res) => {
   let groupId = new ObjectId();
   try {
-    groupId = new ObjectId(req.params.groupId);
+    groupId = mongoose.Types.ObjectId.createFromHexString(req.params.groupId);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Group not found");
   }
@@ -36,9 +37,9 @@ exports.getMessagesByGroup = async (req, res) => {
 };
 
 exports.getUnreadMessagesCount = async (req, res) => {
-  let groupId = new ObjectId();
+  let groupId = mongoose.Types.ObjectId.createFromHexString();
   try {
-    groupId = new ObjectId(req.params.groupId);
+    groupId = mongoose.Types.ObjectId.createFromHexString(req.params.groupId);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Group not found");
   }
