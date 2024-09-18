@@ -18,11 +18,12 @@ describe("Support Ticket API Endpoints", () => {
   }, 100000);
 
   afterAll(async () => {
+    await SupportTicketModel.deleteMany({});
     await mongoose.disconnect();
   }, 100000);
 
   beforeEach(async () => {
-    await SupportTicketModel.deleteMany({});
+    // await SupportTicketModel.deleteMany({});
   }, 100000);
 
   afterEach(async () => {
