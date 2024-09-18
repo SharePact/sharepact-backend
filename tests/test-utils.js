@@ -11,9 +11,9 @@ const { hashPassword } = require("../utils/auth");
 
 const createUser = async (
   userData = {
-    email: "test@example.com",
+    email: "test1@example.com",
     password: "testpassword",
-    username: "testuser",
+    username: "testuser1",
     avatarUrl: "https://example.com/avatar.jpg",
     verified: true,
     role: "admin",

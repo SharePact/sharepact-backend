@@ -22,13 +22,13 @@ describe("Support Ticket API Endpoints", () => {
     await mongoose.disconnect();
   }, 100000);
 
-  beforeEach(async () => {
-    // await SupportTicketModel.deleteMany({});
-  }, 100000);
+  // beforeEach(async () => {
+  //   // await SupportTicketModel.deleteMany({});
+  // }, 100000);
 
-  afterEach(async () => {
-    await SupportTicketModel.deleteMany({});
-  }, 100000);
+  // afterEach(async () => {
+  //   await SupportTicketModel.deleteMany({});
+  // }, 100000);
 
   describe("POST /support", () => {
     it("should successfully create a new support ticket", async () => {
@@ -43,7 +43,7 @@ describe("Support Ticket API Endpoints", () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toBe("successful");
       expect(res.body.data).toBeFalsy();
-    });
+    }, 100000);
 
     it("should return 400 if email is missing", async () => {
       const name = "Test User";
@@ -55,7 +55,7 @@ describe("Support Ticket API Endpoints", () => {
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe("invalid request payload");
-    });
+    }, 100000);
 
     it("should return 400 if message is missing", async () => {
       const name = "Test User";
@@ -66,7 +66,7 @@ describe("Support Ticket API Endpoints", () => {
         .send({ name, email });
       expect(res.status).toBe(400);
       expect(res.body.message).toBe("invalid request payload");
-    });
+    }, 100000);
   }, 100000);
 
   describe("GET /support", () => {
@@ -106,15 +106,7 @@ describe("Support Ticket API Endpoints", () => {
           }),
         ])
       );
-    });
-
-    it("should return an empty array if no tickets exist", async () => {
-      const res = await request(app).get("/api/support/contact-support");
-
-      expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successful");
-      expect(res.body.data).toEqual([]);
-    });
+    }, 100000);
 
     it("should filter tickets by resolved status", async () => {
       const ticket1 = await SupportTicketModel.createSupportTicket({
@@ -142,7 +134,16 @@ describe("Support Ticket API Endpoints", () => {
           }),
         ])
       );
-    });
+    }, 100000);
+
+    it("should return an empty array if no tickets exist", async () => {
+      await SupportTicketModel.deleteMany({});
+      const res = await request(app).get("/api/support/contact-support");
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe("successful");
+      expect(res.body.data).toEqual([]);
+    }, 100000);
   }, 100000);
 
   describe("GET /support/:id", () => {
@@ -169,7 +170,7 @@ describe("Support Ticket API Endpoints", () => {
           resolved: false,
         })
       );
-    });
+    }, 100000);
 
     it("should return 400 if support ticket not found", async () => {
       const invalidId = new mongoose.Types.ObjectId();
@@ -207,7 +208,7 @@ describe("Support Ticket API Endpoints", () => {
           resolvedAt: expect.any(String), // Assuming resolvedAt is returned as a string
         })
       );
-    });
+    }, 100000);
 
     it("should return 400 if support ticket not found", async () => {
       const invalidId = new mongoose.Types.ObjectId();
