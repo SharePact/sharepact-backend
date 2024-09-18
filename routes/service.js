@@ -15,8 +15,11 @@ router.post(
   multer.single("logo"),
   serviceController.createService
 );
-router.get("/", serviceController.getServices);
-router.get("/:id", serviceController.getServiceById);
+router.get("/",
+checkAuth,
+ serviceController.getServices);
+router.get("/:id",   checkAuth,
+serviceController.getServiceById);
 router.put(
   "/:id",
   checkAuth,
