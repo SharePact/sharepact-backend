@@ -34,7 +34,7 @@ jobs:
 
       - name: Set MongoDB URI environment variable
         # run: echo "MONGODB_TEST_URI=mongodb://localhost:27017/testdb" >> $GITHUB_ENV
-        run: echo "MONGODB_TEST_URI=mongodb+srv://test:test@localhost:27017/test?retryWrites=true&w=majority" >> $GITHUB_ENV
+        run: echo "MONGODB_TEST_URI=mongodb+srv://test:test@localhost/test?retryWrites=true&w=majority" >> $GITHUB_ENV
 
       - run: npm i
       - run: npm run build --if-present
