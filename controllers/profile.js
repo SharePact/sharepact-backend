@@ -161,9 +161,7 @@ exports.deleteAccount = async (req, res) => {
       return BuildHttpResponse(res, 500, "user not found");
     }
 
-    await AuthTokenModel.deleteAllTokensByUser(user._id);
-
-    await user.deleteAccount();
+    await user.deleteUserAndAssociatedData();
 
     return BuildHttpResponse(res, 200, "successful deleted account");
   } catch (error) {

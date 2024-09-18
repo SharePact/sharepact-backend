@@ -56,6 +56,23 @@ async function createUserWithEmailAndPassword(
   return user;
 }
 
+async function createAdminUserWithEmailAndPassword(
+  email = "test@example.com",
+  password = "testpassword"
+) {
+  const hashedPassword = await hashPassword(password);
+  const user = new User({
+    email,
+    password: hashedPassword,
+    username: "TestUser",
+    avatarUrl: "https://example.com/avatar.png",
+    verified: true,
+    role: "admin",
+  });
+  await user.save();
+  return user;
+}
+
 async function createGroup(service, admin, members = []) {
   const group = new Group({
     service: service._id,
@@ -120,6 +137,7 @@ async function createOTP(user, service) {
 module.exports = {
   createCategory,
   createUserWithEmailAndPassword,
+  createAdminUserWithEmailAndPassword,
   createWaitlist,
   createUser,
   createGroup,

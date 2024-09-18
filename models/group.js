@@ -376,6 +376,21 @@ const GroupSchema = new Schema(
         );
         return result;
       },
+      async removeUserFromAllGroups(userId) {
+        const groupsWithUser = await this.find({
+          "members.user": userId,
+        });
+
+        for (const group of groupsWithUser) {
+          // Remove the user from the members array
+          group.members = group.members.filter(
+            (member) => member.user.toString() !== userId.toString()
+          );
+          await group.save();
+        }
+
+        return groupsWithUser.length; // Return the number of groups updated
+      },
       async updateMemberConfirmStatus(groupId, userId, confirmStatus) {
         const model = mongoose.model(modelName);
         return await model.updateOne(
