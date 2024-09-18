@@ -27,15 +27,17 @@ describe("Waitlist API Endpoints", () => {
 
     const server = new Server(new Router());
     app = server.getApp();
+
+    user = await createUser();
   }, 100000);
 
   afterAll(async () => {
+    await User.deleteMany({});
     await mongoose.disconnect();
   }, 100000);
 
   beforeEach(async () => {
     await Waitlist.deleteMany({});
-    user = await createUser();
     authToken = await createAuthToken(user);
     waitlistEntry = await createWaitlist();
   }, 100000);
@@ -43,13 +45,12 @@ describe("Waitlist API Endpoints", () => {
   afterEach(async () => {
     await Waitlist.deleteMany({});
     await AuthToken.deleteMany({});
-    await User.deleteMany({});
   }, 100000);
 
   describe("POST /waitlist", () => {
     it("should successfully create a new waitlist entry", async () => {
       const name = "Test User";
-      const email = "test@example.com";
+      const email = "test1@example.com";
 
       const res = await request(app)
         .post("/api/waitlist")
