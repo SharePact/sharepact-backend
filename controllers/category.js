@@ -1,5 +1,4 @@
 const Category = require("../models/category");
-const cloudinary = require("../config/cloudinary");
 const { BuildHttpResponse } = require("../utils/response");
 const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const Service = require("../models/service");
@@ -12,6 +11,9 @@ exports.createCategory = async (req, res) => {
     if (req.file) {
       result = await uploadBufferToCloudinary(req.file.buffer);
     }
+
+    if (!req.body.categoryName)
+      return BuildHttpResponse(res, 400, "categoryName is required");
 
     const category = await Category.createCategory({
       categoryName: req.body.categoryName,
@@ -80,7 +82,7 @@ exports.updateCategory = async (req, res) => {
     let imageUrl = "";
     if (req.file) {
       const result = await uploadBufferToCloudinary(req.file.buffer);
-      imageUrl = result.secure_url;
+      imageUrl = result?.secure_url;
     }
     category.updateCategory({ categoryName: req.body.categoryName, imageUrl });
 

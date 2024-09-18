@@ -3,6 +3,10 @@ const { writeOnlyPlugin } = require("../utils/mongoose-plugins");
 const { hashPassword } = require("../utils/auth");
 const modelName = "User";
 const Schema = mongoose.Schema;
+const NotificationModel = require("./Notifications");
+const GroupModel = require("./group");
+const AuthTokenModel = require("./authToken");
+const BankDetailsModel = require("./bankdetails");
 
 const NotificationConfigSchema = new Schema({
   loginAlert: { type: Boolean, default: true },
@@ -52,6 +56,15 @@ const UserSchema = new mongoose.Schema(
   {
     indexes: [{ fields: { email: 1 } }, { fields: { username: 1 } }],
     methods: {
+      async deleteUserAndAssociatedData() {
+        const userId = this._id;
+        await NotificationModel.deleteMany({ user: userId });
+        await AuthTokenModel.deleteMany({ user: userId });
+        await BankDetailsModel.deleteMany({ user: userId });
+        await GroupModel.removeUserFromAllGroups(userId);
+        await this.deleteOne(); // Or this.remove() in older versions of mongoose
+        return true;
+      },
       async updatePassword(newPassword) {
         const hashedNewPassword = await hashPassword(newPassword);
         this.password = hashedNewPassword;
