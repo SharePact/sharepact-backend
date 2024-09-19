@@ -6,6 +6,7 @@ const PaymentInvoiceService = require("../notification/payment_invoice");
 const NotificationService = require("../notification/index");
 const { BuildHttpResponse } = require("../utils/response");
 const inAppNotificationService = require("../notification/inapp");
+const { ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
 
 const generateGroupCode = async () => {
@@ -19,7 +20,15 @@ const generateGroupCode = async () => {
 };
 exports.activateGroup = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     const userId = req.user._id;
 
     const group = await GroupModel.findById(groupId)
@@ -84,8 +93,13 @@ exports.createGroup = async (req, res) => {
       );
     }
 
-    const service = await ServiceModel.findById(serviceId);
-    if (!service) {
+    let service;
+    try {
+      service = await ServiceModel.findById(serviceId);
+      if (!service) {
+        return BuildHttpResponse(res, 404, "Service not found");
+      }
+    } catch (error) {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
@@ -142,7 +156,16 @@ exports.createGroup = async (req, res) => {
 
 exports.updateSubscriptionCost = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
+
     const { newSubscriptionCost } = req.body;
     const userId = req.user._id;
 
@@ -190,7 +213,13 @@ exports.updateSubscriptionCost = async (req, res) => {
 };
 
 exports.getGroupsByServiceId = async (req, res) => {
-  const { service_id } = req.params;
+  const { service_id: serviceId } = req.params;
+  let service_id = new ObjectId();
+  try {
+    service_id = mongoose.Types.ObjectId.createFromHexString(serviceId);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, `Service not found`);
+  }
   const { page, limit } = req.pagination;
   try {
     const userId = req.user._id;
@@ -239,7 +268,13 @@ exports.getGroups = async (req, res) => {
 };
 
 exports.deleteGroup = async (req, res) => {
-  const { id } = req.params;
+  const { id: groupIdStr } = req.params;
+  let id = new ObjectId();
+  try {
+    id = mongoose.Types.ObjectId.createFromHexString(groupIdStr.toString());
+  } catch (err) {
+    return BuildHttpResponse(res, 404, `Group not found`);
+  }
   try {
     const group = await GroupModel.findById(id);
     if (!group) return BuildHttpResponse(res, 404, "group not found");
@@ -352,7 +387,16 @@ exports.requestToJoinGroup = async (req, res) => {
 exports.handleJoinRequest = async (req, res) => {
   try {
     // TODO: use zod ZodMiddleware
-    const { groupId, userId, approve } = req.body;
+    const { groupId: groupIdStr, userId, approve } = req.body;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
+
     const group = await GroupModel.findById(groupId).populate(
       "joinRequests.user",
       "username avatarUrl deviceToken"
@@ -433,7 +477,15 @@ exports.handleJoinRequest = async (req, res) => {
 
 exports.getGroupDetails = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     const userId = req.user._id;
 
     // Find the group and populate the necessary fields
@@ -561,7 +613,15 @@ exports.getGroupDetailsByCode = async (req, res) => {
 
 exports.getJoinRequests = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     const group = await GroupModel.findById(groupId).populate(
       "joinRequests.user",
       "username avatarUrl"
@@ -601,7 +661,15 @@ exports.getJoinRequests = async (req, res) => {
 
 exports.leaveGroup = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
 
     // Fetch the group and populate admin and members fields
     const group = await GroupModel.findById(groupId)
@@ -665,7 +733,15 @@ exports.leaveGroup = async (req, res) => {
 exports.UpdateConfirmStatus = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { groupId, action } = req.params;
+    const { groupId: groupIdStr, action } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     if (!["confirm", "unconfirm"].includes(action)) {
       return BuildHttpResponse(res, 404, "page not found");
     }
