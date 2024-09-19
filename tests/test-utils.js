@@ -42,13 +42,14 @@ const createWaitlist = async (
 
 async function createUserWithEmailAndPassword(
   email = "test@example.com",
+  username = "TestUser",
   password = "testpassword"
 ) {
   const hashedPassword = await hashPassword(password);
   const user = new User({
     email,
     password: hashedPassword,
-    username: "TestUser",
+    username,
     avatarUrl: "https://example.com/avatar.png",
     verified: true,
   });
@@ -58,13 +59,14 @@ async function createUserWithEmailAndPassword(
 
 async function createAdminUserWithEmailAndPassword(
   email = "test@example.com",
+  username = "TestUser",
   password = "testpassword"
 ) {
   const hashedPassword = await hashPassword(password);
   const user = new User({
     email,
     password: hashedPassword,
-    username: "TestUser",
+    username,
     avatarUrl: "https://example.com/avatar.png",
     verified: true,
     role: "admin",
