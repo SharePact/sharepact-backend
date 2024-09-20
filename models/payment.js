@@ -77,20 +77,25 @@ const PaymentSchema = new Schema(
     methods: {
       async updatePaymentReference(newReference) {
         this.reference = newReference;
-        return await this.save();
+        await this.save();
+        return this;
       },
       async updateStatus(status) {
         this.status = status;
-        return await this.save();
+        await this.save();
+        return this;
       },
       async updateDisbursedStatus(status) {
         this.disbursed = status;
-        return await this.save();
+        await this.save();
+        return this;
       },
       async updateDisbursedStatusAndId(id, status) {
         this.disbursementId = id;
         this.disbursed = status;
-        return await this.save();
+
+        await this.save();
+        return this;
       },
     },
   }
