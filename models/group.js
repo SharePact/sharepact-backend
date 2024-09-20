@@ -133,7 +133,7 @@ const GroupSchema = new Schema(
       },
       async findMemberById(userId) {
         return this.members.find(
-          (member) => member.user.toString() === userId.toString()
+          (member) => member?.user?._id.toString() === userId.toString()
         );
       },
       async isAdmin(userId) {
