@@ -37,7 +37,7 @@ exports.getMessagesByGroup = async (req, res) => {
 };
 
 exports.getUnreadMessagesCount = async (req, res) => {
-  let groupId = mongoose.Types.ObjectId.createFromHexString();
+  let groupId = new ObjectId();
   try {
     groupId = mongoose.Types.ObjectId.createFromHexString(req.params.groupId);
   } catch (err) {
@@ -64,7 +64,17 @@ exports.getUnreadMessagesCount = async (req, res) => {
 
 exports.markMessagesAsRead = async (req, res) => {
   try {
-    const { groupId, messageIds } = req.body;
+    let { groupId, messageIds } = req.body;
+    if (groupId) {
+      try {
+        groupId = mongoose.Types.ObjectId.createFromHexString(
+          groupId.toString()
+        );
+      } catch (err) {
+        return BuildHttpResponse(res, 404, `Group not found 1`, err);
+      }
+    }
+
     const userId = req.user._id;
 
     if (groupId) {
