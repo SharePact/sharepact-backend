@@ -114,7 +114,7 @@ class PaymentInvoiceService {
       instagramLink: "https://instagram.com/Sharepact-Limited",
       linkedinLink: "https://linkedin.com/in/Sharepact-Limited",
       twitterLogoUrl:
-        "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Twitter_Logo_469489_976_cp8cga.avif",
+        "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1726914043/X_Logo_Brand_Identity_kydens.webp",
       instagramLogoUrl:
         "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Instagram_Logo_2016.svg_ffskk2.webp",
       linkedinLogoUrl:
