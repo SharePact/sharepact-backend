@@ -1,24 +1,32 @@
-# Use an Ubuntu-based Node.js image (Node 22.8.0 slim)
-FROM node:22.8.0-slim
-
-# Set the working directory
+FROM node:lts-alpine3.20
 WORKDIR /app
+RUN apk update && apk add bash
 
-# Update the package manager and install necessary dependencies
-RUN apt-get update && apt-get install -y \
-    bash 
+# Installs latest Chromium (100) package.
+RUN apk add --no-cache \
+    udev \
+    ttf-freefont \
+    chromium
 
-# Copy package.json and package-lock.json (if available)
+
+# Set the Puppeteer environment variables
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+RUN adduser pptruser --disabled-password && adduser -S -g pptruser wheel \
+    && mkdir -p /home/pptruser/Downloads /app \
+    && chown -R pptruser:wheel /home/pptruser \
+    && chown -R pptruser:wheel /app \
+    && chown -R pptruser:wheel /project
+
+
+USER pptruser
+
 COPY package*.json ./
-
-# Install project dependencies
 RUN npm install
-RUN npm install -g phantomjs-prebuilt
-
-# Copy the rest of the application
 COPY . .
 
-# Expose the port that the app will run on
+# Expose the port that the app runs on
 EXPOSE 3031
 
 # Command to run the app
