@@ -68,7 +68,9 @@ class PaymentInvoiceService {
     });
 
     // Use Puppeteer to generate the PDF
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Add these flags
+    });
     const page = await browser.newPage();
 
     // Set the content for the page
