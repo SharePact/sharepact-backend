@@ -13,7 +13,14 @@ RUN apk add --no-cache \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
+RUN addgroup -S pptruser && adduser -S pptruser -G pptruser -s /bin/sh -D
+USER pptruser
 
+
+USER root
+RUN npx puppeteer browsers install chrome --install-deps
+
+USER pptruser
 
 COPY package*.json ./
 RUN npm install
