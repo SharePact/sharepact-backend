@@ -1,23 +1,30 @@
-FROM node:lts-alpine3.20
+# Use an Ubuntu-based Node.js image (Node 22.8.0 slim)
+FROM node:22.8.0-slim
+
+# Set the working directory
 WORKDIR /app
-RUN apk update && apk add bash
 
-RUN apk update && apk add bash fontconfig freetype ttf-dejavu libstdc++ curl
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont
+# Update the package manager and install necessary dependencies
+RUN apt-get update && apt-get install -y \
+    bash \
+    fontconfig \
+    libfreetype6 \
+    ttf-dejavu \
+    libstdc++6 \
+    curl \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
+# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
+
+# Install project dependencies
 RUN npm install
-RUN npm install -g phantomjs-prebuilt
-RUN which phantomjs
+
+# Copy the rest of the application
 COPY . .
 
-# Expose the port that the app runs on
+# Expose the port that the app will run on
 EXPOSE 3031
 
 # Command to run the app
