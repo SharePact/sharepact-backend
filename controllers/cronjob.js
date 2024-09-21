@@ -8,8 +8,7 @@ const PaymentModel = require("../models/payment");
 const { v4: uuidv4 } = require("uuid");
 const inAppNotificationService = require("../notification/inapp");
 const mongoose = require("mongoose");
-// const pMap = require("p-map");
-// import pMap from "p-map";
+
 let pMap;
 (async () => {
   pMap = (await import("p-map")).default;
@@ -114,13 +113,13 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
             groupName: group.groupName,
           });
           if (inactiveMember?.user?.deviceToken) {
-            await inAppNotificationService.sendNotification({
-              medium: "token",
-              topicTokenOrGroupId: inactiveMember?.user?.deviceToken,
-              name: "paymentReminder",
-              userId: inactiveMember?.user?._id,
-              groupId: group._id,
-            });
+            // await inAppNotificationService.sendNotification({
+            //   medium: "token",
+            //   topicTokenOrGroupId: inactiveMember?.user?.deviceToken,
+            //   name: "paymentReminder",
+            //   userId: inactiveMember?.user?._id,
+            //   groupId: group._id,
+            // });
           }
           await NotificationService.sendNotification({
             type: "memberPaymentReminderForCreator",
@@ -132,14 +131,14 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
             memberUsername: inactiveMember.username,
           });
           if (group?.admin?.deviceToken) {
-            await inAppNotificationService.sendNotification({
-              medium: "token",
-              topicTokenOrGroupId: group?.admin?.deviceToken,
-              name: "memberPaymentReminderForCreator",
-              userId: group.admin._id,
-              groupId: group._id,
-              memberId: inactiveMember?.user?._id,
-            });
+            // await inAppNotificationService.sendNotification({
+            //   medium: "token",
+            //   topicTokenOrGroupId: group?.admin?.deviceToken,
+            //   name: "memberPaymentReminderForCreator",
+            //   userId: group.admin._id,
+            //   groupId: group._id,
+            //   memberId: inactiveMember?.user?._id,
+            // });
           }
         }
       },
