@@ -26,6 +26,10 @@ RUN apk add --no-cache \
 
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
+COPY package*.json ./
+RUN npm install
+COPY . .
+
 # Add user so we don't need --no-sandbox.
 RUN addgroup -S pptruser && adduser -S -G pptruser pptruser \
     && mkdir -p /home/pptruser/Downloads /app \
@@ -35,9 +39,7 @@ RUN addgroup -S pptruser && adduser -S -G pptruser pptruser \
 # Run everything after as non-privileged user.
 USER pptruser
 
-COPY package*.json ./
-RUN npm install
-COPY . .
+
 
 # Expose the port that the app runs on
 EXPOSE 3031
