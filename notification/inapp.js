@@ -1,4 +1,3 @@
-const { paymentReminderForInactiveMembers } = require("../controllers/cronjob");
 const UserModel = require("../models/user");
 const GroupModel = require("../models/group");
 const MessageModel = require("../models/message");
@@ -85,9 +84,9 @@ class InAppNotificationService {
     if (medium === "topic") {
       await FirebaseService.sendNotificationToTopic(
         topicTokenOrGroupId,
-        notification.subject,  // Title of the notification
-        notification.body || notification.notificationMessage,  // Message body
-        notification.data  // Optional data payload
+        notification.subject, // Title of the notification
+        notification.body || notification.notificationMessage, // Message body
+        notification.data // Optional data payload
       );
     } else if (["group", "token"].includes(medium)) {
       let recipientTokens = [];
@@ -117,9 +116,9 @@ class InAppNotificationService {
         async (recipientToken) => {
           await FirebaseService.sendNotification(
             recipientToken,
-            notification.subject,  // Title of the notification
-            notification.body || notification.notificationMessage,  // Message body
-            notification.data  // Optional data payload
+            notification.subject, // Title of the notification
+            notification.body || notification.notificationMessage, // Message body
+            notification.data // Optional data payload
           );
         },
         { concurrency: 100 }
@@ -236,4 +235,3 @@ class InAppNotificationService {
 }
 
 module.exports = InAppNotificationService;
-
