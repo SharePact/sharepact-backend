@@ -67,9 +67,11 @@ class PaymentInvoiceService {
       payment_link: resp.payment_link,
     });
 
-    // Use Puppeteer to generate the PDF
+    // Launch the Puppeteer browser
     const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Add these flags
+      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Docker or root
+      headless: true, // Make sure Puppeteer runs headless for better performance
+      timeout: 60000, // Optional: increase launch timeout
     });
     const page = await browser.newPage();
 
