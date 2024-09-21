@@ -6,14 +6,7 @@ WORKDIR /app
 
 # Update the package manager and install necessary dependencies
 RUN apt-get update && apt-get install -y \
-    bash \
-    fontconfig \
-    libfreetype6 \
-    ttf-dejavu \
-    libstdc++6 \
-    curl \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    bash 
 
 # Copy package.json and package-lock.json (if available)
 COPY package*.json ./
