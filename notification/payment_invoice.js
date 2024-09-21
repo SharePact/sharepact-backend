@@ -67,8 +67,12 @@ class PaymentInvoiceService {
       payment_link: resp.payment_link,
     });
 
-    // Use Puppeteer to generate the PDF
-    const browser = await puppeteer.launch();
+    // Launch the Puppeteer browser
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Docker or root
+      headless: true, // Make sure Puppeteer runs headless for better performance
+      timeout: 60000, // Optional: increase launch timeout
+    });
     const page = await browser.newPage();
 
     // Set the content for the page
@@ -83,45 +87,52 @@ class PaymentInvoiceService {
     return dataBuffer;
   }
 
-  
-  
   static async handleSendInvoiceProcess(data) {
-      const { group: groupInfo, user } = data;
-      const group = await GroupModel.findById(groupInfo._id);
-      const buffer = await PaymentInvoiceService.generateInvoice(group, user);
-  
-      // Path to the EJS template
-      const templatePath = path.join(__dirname, '..', 'templates', 'invoiceemail.ejs');
-  
-      // Render the EJS template
-      const htmlContent = await ejs.renderFile(templatePath, {
-          user,
-          group,
-          totalAmount: group.subscriptionCost / group.members.length + group.handlingFee,
-          currency: group.currency,
-          paymentLink: group.paymentLink,
-          logoUrl: 'https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725966804/ShapePact_Logo_eltxdv.png',
-          twitterLink: 'https://twitter.com/Sharepact-Limited',
-          instagramLink: 'https://instagram.com/Sharepact-Limited',
-          linkedinLink: 'https://linkedin.com/in/Sharepact-Limited',
-          twitterLogoUrl: 'https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Twitter_Logo_469489_976_cp8cga.avif',
-          instagramLogoUrl: 'https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Instagram_Logo_2016.svg_ffskk2.webp',
-          linkedinLogoUrl: 'https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Linkedin_Logo_caphbo.webp'
-      });
-  
-      // Send email
-      await sendEmailWithBrevo({
-        subject: `${group.groupName} Invoice`,
-        htmlContent, // Use rendered HTML content
-        to: [{ email: user.email }],
-        attachments: [{ name: "invoice.pdf", buffer }],
-      });
-  
-      // Update group details after sending invoice
-      await group.updateMemberPaymentActiveState(user._id, false);
-      await group.updateMemberlastInvoiceSentAt(user._id, Date.now());
+    const { group: groupInfo, user } = data;
+    const group = await GroupModel.findById(groupInfo._id);
+    const buffer = await PaymentInvoiceService.generateInvoice(group, user);
+
+    // Path to the EJS template
+    const templatePath = path.join(
+      __dirname,
+      "..",
+      "templates",
+      "invoiceemail.ejs"
+    );
+
+    // Render the EJS template
+    const htmlContent = await ejs.renderFile(templatePath, {
+      user,
+      group,
+      totalAmount:
+        group.subscriptionCost / group.members.length + group.handlingFee,
+      currency: group.currency,
+      paymentLink: group.paymentLink,
+      logoUrl:
+        "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725966804/ShapePact_Logo_eltxdv.png",
+      twitterLink: "https://twitter.com/Sharepact-Limited",
+      instagramLink: "https://instagram.com/Sharepact-Limited",
+      linkedinLink: "https://linkedin.com/in/Sharepact-Limited",
+      twitterLogoUrl:
+        "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1726914043/X_Logo_Brand_Identity_kydens.webp",
+      instagramLogoUrl:
+        "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Instagram_Logo_2016.svg_ffskk2.webp",
+      linkedinLogoUrl:
+        "https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725968030/Linkedin_Logo_caphbo.webp",
+    });
+
+    // Send email
+    await sendEmailWithBrevo({
+      subject: `${group.groupName} Invoice`,
+      htmlContent, // Use rendered HTML content
+      to: [{ email: user.email }],
+      attachments: [{ name: "invoice.pdf", buffer }],
+    });
+
+    // Update group details after sending invoice
+    await group.updateMemberPaymentActiveState(user._id, false);
+    await group.updateMemberlastInvoiceSentAt(user._id, Date.now());
   }
-  
 }
 
 module.exports = PaymentInvoiceService;

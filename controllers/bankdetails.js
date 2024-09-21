@@ -4,6 +4,7 @@ const PaymentModel = require("../models/payment");
 const { BuildHttpResponse } = require("../utils/response");
 const GroupModel = require("../models/group");
 const Flutterwave = require("../utils/flutterwave");
+const mongoose = require("mongoose");
 
 exports.addBankDetails = async (req, res) => {
   try {
@@ -124,7 +125,8 @@ exports.verifyPayment = async (req, res) => {
         );
 
     // Fetch the group using the group ID from the payment info
-    const group = await GroupModel.findById(payment.group);
+    const group = await GroupModel.findById(payment.group._id);
+
     if (!group)
       return res
         .status(400)
@@ -133,7 +135,8 @@ exports.verifyPayment = async (req, res) => {
         );
 
     // Check if the user is a member of the group
-    const member = await group.findMemberById(payment.user);
+
+    const member = await group.findMemberById(payment?.user?._id);
     if (!member)
       return res
         .status(400)

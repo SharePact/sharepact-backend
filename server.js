@@ -34,4 +34,5 @@ mongoose
 FirebaseService.initApp();
 
 const server = new Server(new Router());
+
 server.startListening();

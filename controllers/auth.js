@@ -6,12 +6,7 @@ const { getUserFromToken } = require("../middleware/checkauth");
 
 const NotificationService = require("../notification/index");
 const inAppNotificationService = require("../notification/inapp");
-const {
-  generateRandomUsername,
-  hashPassword,
-  comparePassword,
-  generateToken,
-} = require("../utils/auth");
+const { generateRandomUsername, comparePassword } = require("../utils/auth");
 
 // Predefined avatar URLs (example)
 const avatarUrls = [
@@ -177,40 +172,6 @@ exports.logoutAllSessions = async (req, res) => {
     await AuthTokenModel.deleteAllTokensByUser(userId);
 
     return BuildHttpResponse(res, 200, "successfully logged out");
-  } catch (error) {
-    return BuildHttpResponse(res, 500, error.message);
-  }
-};
-
-exports.PasswordReset = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const user = await UserModel.findByEmail(email);
-    if (!user) {
-      return BuildHttpResponse(res, 500, "email is not registered");
-    }
-
-    const otp = await OTPModel.createNumberOTP(user._id, "passwordReset", 6);
-    // send otp
-
-    return BuildHttpResponse(res, 200, "successful sent otp");
-  } catch (error) {
-    return BuildHttpResponse(res, 500, error.message);
-  }
-};
-
-exports.PasswordReset = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const user = await UserModel.findByEmail(email);
-    if (!user) {
-      return BuildHttpResponse(res, 500, "email is not registered");
-    }
-
-    const otp = await OTPModel.createNumberOTP(user._id, "passwordReset", 6);
-    // send otp
-
-    return BuildHttpResponse(res, 200, "successful sent otp");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

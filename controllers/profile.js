@@ -1,10 +1,11 @@
 const User = require("../models/user");
 const { comparePassword } = require("../utils/auth");
 const { BuildHttpResponse } = require("../utils/response");
-const AuthTokenModel = require("../models/authToken");
 const NotificationModel = require("../models/Notifications");
 const NotificationService = require("../notification/index");
 const inAppNotificationService = require("../notification/inapp");
+const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 
 // Predefined avatar URLs
 const avatarUrls = [
@@ -160,9 +161,7 @@ exports.deleteAccount = async (req, res) => {
       return BuildHttpResponse(res, 500, "user not found");
     }
 
-    await AuthTokenModel.deleteAllTokensByUser(user._id);
-
-    await user.deleteAccount();
+    await user.deleteUserAndAssociatedData();
 
     return BuildHttpResponse(res, 200, "successful deleted account");
   } catch (error) {
@@ -259,7 +258,13 @@ exports.getNotifications = async (req, res) => {
 
 exports.getNotification = async (req, res) => {
   const userId = req.user._id;
-  const { id } = req.params;
+  const { id: nid } = req.params;
+  let id = new ObjectId();
+  try {
+    id = mongoose.Types.ObjectId.createFromHexString(nid);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, `notification not found`);
+  }
   try {
     const user = await User.findById(userId);
     if (!user) {
@@ -268,7 +273,7 @@ exports.getNotification = async (req, res) => {
 
     const notification = await NotificationModel.findById(id);
     if (!notification) {
-      return BuildHttpResponse(res, 500, "notification not found");
+      return BuildHttpResponse(res, 400, "notification not found");
     }
 
     return BuildHttpResponse(res, 200, "successful", notification);
@@ -280,6 +285,7 @@ exports.getNotification = async (req, res) => {
 exports.markNotificationsAsRead = async (req, res) => {
   const userId = req.user._id;
   const { ids } = req.body;
+
   try {
     const user = await User.findById(userId);
     if (!user) {

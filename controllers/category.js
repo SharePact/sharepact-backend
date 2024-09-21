@@ -1,9 +1,9 @@
 const Category = require("../models/category");
-const cloudinary = require("../config/cloudinary");
 const { BuildHttpResponse } = require("../utils/response");
 const { uploadBufferToCloudinary } = require("../utils/cloudinary");
 const Service = require("../models/service");
 const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 
 exports.createCategory = async (req, res) => {
   try {
@@ -11,6 +11,9 @@ exports.createCategory = async (req, res) => {
     if (req.file) {
       result = await uploadBufferToCloudinary(req.file.buffer);
     }
+
+    if (!req.body.categoryName)
+      return BuildHttpResponse(res, 400, "categoryName is required");
 
     const category = await Category.createCategory({
       categoryName: req.body.categoryName,
@@ -47,7 +50,7 @@ exports.getAllCategories = async (req, res) => {
 exports.getCategoryById = async (req, res) => {
   let id = new ObjectId();
   try {
-    id = new ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Category not found");
   }
@@ -67,7 +70,7 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   let id = new ObjectId();
   try {
-    id = new ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Category not found");
   }
@@ -79,7 +82,7 @@ exports.updateCategory = async (req, res) => {
     let imageUrl = "";
     if (req.file) {
       const result = await uploadBufferToCloudinary(req.file.buffer);
-      imageUrl = result.secure_url;
+      imageUrl = result?.secure_url;
     }
     category.updateCategory({ categoryName: req.body.categoryName, imageUrl });
 
@@ -92,7 +95,7 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   let id = new ObjectId();
   try {
-    id = new ObjectId(req.params.id);
+    id = mongoose.Types.ObjectId.createFromHexString(req.params.id);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Category not found");
   }

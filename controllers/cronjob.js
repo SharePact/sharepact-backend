@@ -7,6 +7,7 @@ const BankDetails = require("../models/bankdetails");
 const PaymentModel = require("../models/payment");
 const { v4: uuidv4 } = require("uuid");
 const inAppNotificationService = require("../notification/inapp");
+const mongoose = require("mongoose");
 // const pMap = require("p-map");
 // import pMap from "p-map";
 let pMap;
@@ -24,7 +25,8 @@ exports.recurringInvoices = async (req, res) => {
       async (group) => {
         group.activated = true;
         group.nextSubscriptionDate = new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
+          new Date(group.nextSubscriptionDate).getTime() +
+            30 * 24 * 60 * 60 * 1000
         );
         await PaymentInvoiceService.sendToGroup({ group });
         await group.save();
@@ -39,6 +41,7 @@ exports.recurringInvoices = async (req, res) => {
 exports.checkMembersPayments = async (req, res) => {
   try {
     const groups = await GroupModel.findGroupsWithInactiveMembers();
+
     await pMap(
       groups,
       async (group) => {
@@ -99,7 +102,8 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
     await pMap(
       groups,
       async (group) => {
-        const inactiveMembers = await group.findInactiveMembers();
+        const inactiveMembers =
+          await group.findMembersWithPendingPaymentAfter24hrs();
         for (const inactiveMember of inactiveMembers) {
           await NotificationService.sendNotification({
             type: "paymentReminder",
@@ -151,6 +155,7 @@ exports.groupCreatorDisbursement = async (req, res) => {
   try {
     const groups =
       await GroupModel.findActivatedGroupsWithValidMembersAndPayments();
+
     groups.map(async (group) => {
       const bankDetails = await BankDetails.getByUserId(group.admin._id);
       if (!bankDetails) {
@@ -172,15 +177,18 @@ exports.groupCreatorDisbursement = async (req, res) => {
         accountNumber: bankDetails.accountNumber,
         amount: totalAmout,
         currency: payments[0]?.currency,
-        reference: uuidv4(),
+        reference: uuidv4() + "_PMCKDU_1",
         narration: `disbursement for subscription from group ${group.groupName}`,
       });
 
-      if (dResponse == true) {
+      if (dResponse?.status == true) {
         await pMap(
           payments,
           async (payment) => {
-            await payment.updateDisbursedStatusAndId(dResponse.id, "pending");
+            await PaymentModel.findByIdAndUpdate(payment._id, {
+              disbursementId: dResponse.id,
+              disbursed: "pending",
+            });
           },
           { concurrency: 10 }
         );
@@ -201,22 +209,27 @@ exports.verifyPendingDisbursements = async (req, res) => {
     disbursements.map(async (disbursement) => {
       const disbursementId = disbursement._id;
       const dResponse = await Flutterwave.fetchTransfer(disbursementId);
+      const payments = disbursement?.payments;
       if (dResponse.status == true) {
         await pMap(
           payments,
           async (payment) => {
-            await payment.updateDisbursedStatus("successful");
+            await PaymentModel.findByIdAndUpdate(payment._id, {
+              disbursed: "successful",
+            });
           },
           { concurrency: 10 }
         );
       } else if (
         dResponse?.statusString &&
-        dResponse?.statusStringtoLowerCase() == "failed"
+        dResponse?.statusString.toLowerCase() == "failed"
       ) {
         await pMap(
           payments,
           async (payment) => {
-            await payment.updateDisbursedStatusAndId("", "not-disbursed");
+            await PaymentModel.findByIdAndUpdate(payment._id, {
+              disbursed: "not-disbursed",
+            });
           },
           { concurrency: 10 }
         );

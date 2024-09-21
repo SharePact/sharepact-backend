@@ -77,7 +77,7 @@ const GroupSchema = new Schema(
       },
       async removeMember(userId) {
         this.members = this.members.filter(
-          (member) => member.user.toString() !== userId.toString()
+          (member) => member.user._id != userId
         );
         await this.save();
         return this;
@@ -133,7 +133,7 @@ const GroupSchema = new Schema(
       },
       async findMemberById(userId) {
         return this.members.find(
-          (member) => member.user.toString() === userId.toString()
+          (member) => member?.user?._id.toString() === userId.toString()
         );
       },
       async isAdmin(userId) {
@@ -246,6 +246,25 @@ const GroupSchema = new Schema(
             !member.user.equals(this.admin)
         );
         return inactivemembers;
+      },
+      async findMembersWithPendingPaymentAfter24hrs() {
+        const now = new Date();
+        const lowerBound = new Date(
+          now.getTime() - 24 * 60 * 60 * 1000 - 1 * 60 * 1000
+        ); // 24 hours ago - 1 minutes
+        const upperBound = new Date(
+          now.getTime() - 24 * 60 * 60 * 1000 + 1 * 60 * 1000
+        ); // 24 hours ago + 1 minutes
+
+        const pendingmembers = this.members.filter(
+          (member) =>
+            member.paymentActive === false &&
+            member.lastInvoiceSentAt &&
+            member.lastInvoiceSentAt > lowerBound &&
+            member.lastInvoiceSentAt < upperBound &&
+            !member.user.equals(this.admin)
+        );
+        return pendingmembers;
       },
     },
     statics: {
@@ -376,6 +395,21 @@ const GroupSchema = new Schema(
         );
         return result;
       },
+      async removeUserFromAllGroups(userId) {
+        const groupsWithUser = await this.find({
+          "members.user": userId,
+        });
+
+        for (const group of groupsWithUser) {
+          // Remove the user from the members array
+          group.members = group.members.filter(
+            (member) => member.user.toString() !== userId.toString()
+          );
+          await group.save();
+        }
+
+        return groupsWithUser.length; // Return the number of groups updated
+      },
       async updateMemberConfirmStatus(groupId, userId, confirmStatus) {
         const model = mongoose.model(modelName);
         return await model.updateOne(
@@ -386,11 +420,11 @@ const GroupSchema = new Schema(
       async findGroupsWithInvoiceSentExactly24HrsAgo() {
         const now = new Date();
         const lowerBound = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000 - 2 * 60 * 1000
-        ); // 24 hours ago - 2 minutes
+          now.getTime() - 24 * 60 * 60 * 1000 - 1 * 60 * 1000
+        ); // 24 hours ago - 1 minutes
         const upperBound = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000 + 2 * 60 * 1000
-        ); // 24 hours ago + 2 minutes
+          now.getTime() - 24 * 60 * 60 * 1000 + 1 * 60 * 1000
+        ); // 24 hours ago + 1 minutes
 
         return await this.find({
           members: {
@@ -420,7 +454,7 @@ const GroupSchema = new Schema(
           members: {
             $elemMatch: {
               paymentActive: false,
-              lastInvoiceSentAt: { $lt: deadline },
+              lastInvoiceSentAt: { $lte: deadline },
               user: { $ne: this.admin },
             },
           },
@@ -534,7 +568,7 @@ const GroupSchema = new Schema(
               // planName: 1,
               members: 1,
               payments: 1,
-              "admin.email": 1,
+              admin: 1,
             },
           },
           {

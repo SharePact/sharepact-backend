@@ -6,6 +6,8 @@ const PaymentInvoiceService = require("../notification/payment_invoice");
 const NotificationService = require("../notification/index");
 const { BuildHttpResponse } = require("../utils/response");
 const inAppNotificationService = require("../notification/inapp");
+const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 
 const generateGroupCode = async () => {
   let code;
@@ -18,7 +20,15 @@ const generateGroupCode = async () => {
 };
 exports.activateGroup = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     const userId = req.user._id;
 
     const group = await GroupModel.findById(groupId)
@@ -83,8 +93,13 @@ exports.createGroup = async (req, res) => {
       );
     }
 
-    const service = await ServiceModel.findById(serviceId);
-    if (!service) {
+    let service;
+    try {
+      service = await ServiceModel.findById(serviceId);
+      if (!service) {
+        return BuildHttpResponse(res, 404, "Service not found");
+      }
+    } catch (error) {
       return BuildHttpResponse(res, 404, "Service not found");
     }
 
@@ -131,6 +146,7 @@ exports.createGroup = async (req, res) => {
       userId: admin,
       to: [req.user.email],
       textContent: `Your group "${newGroup.groupName}" has been successfully created.`,
+      groupCode: newGroup.groupCode
     });
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
@@ -141,7 +157,16 @@ exports.createGroup = async (req, res) => {
 
 exports.updateSubscriptionCost = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
+
     const { newSubscriptionCost } = req.body;
     const userId = req.user._id;
 
@@ -189,7 +214,13 @@ exports.updateSubscriptionCost = async (req, res) => {
 };
 
 exports.getGroupsByServiceId = async (req, res) => {
-  const { service_id } = req.params;
+  const { service_id: serviceId } = req.params;
+  let service_id = new ObjectId();
+  try {
+    service_id = mongoose.Types.ObjectId.createFromHexString(serviceId);
+  } catch (err) {
+    return BuildHttpResponse(res, 404, `Service not found`);
+  }
   const { page, limit } = req.pagination;
   try {
     const userId = req.user._id;
@@ -238,7 +269,13 @@ exports.getGroups = async (req, res) => {
 };
 
 exports.deleteGroup = async (req, res) => {
-  const { id } = req.params;
+  const { id: groupIdStr } = req.params;
+  let id = new ObjectId();
+  try {
+    id = mongoose.Types.ObjectId.createFromHexString(groupIdStr.toString());
+  } catch (err) {
+    return BuildHttpResponse(res, 404, `Group not found`);
+  }
   try {
     const group = await GroupModel.findById(id);
     if (!group) return BuildHttpResponse(res, 404, "group not found");
@@ -306,8 +343,8 @@ exports.requestToJoinGroup = async (req, res) => {
     await group.save();
 
     // Log the user and admin's device token
-    console.log("User ID for join request:", req.user?._id);  // Log the user making the request
-    console.log("Admin device token:", group?.admin?.deviceToken);  // Log the admin's device token
+    console.log("User ID for join request:", req.user?._id); // Log the user making the request
+    console.log("Admin device token:", group?.admin?.deviceToken); // Log the admin's device token
 
     if (group?.admin?.deviceToken) {
       try {
@@ -348,11 +385,19 @@ exports.requestToJoinGroup = async (req, res) => {
   }
 };
 
-
 exports.handleJoinRequest = async (req, res) => {
   try {
     // TODO: use zod ZodMiddleware
-    const { groupId, userId, approve } = req.body;
+    const { groupId: groupIdStr, userId, approve } = req.body;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
+
     const group = await GroupModel.findById(groupId).populate(
       "joinRequests.user",
       "username avatarUrl deviceToken"
@@ -387,15 +432,15 @@ exports.handleJoinRequest = async (req, res) => {
         const chatRoom = await ChatRoomModel.findByGroupId(group._id);
         await chatRoom.addMember(userId);
 
-    // Send notification to the user
-    // await NotificationService.sendNotification({
-    //   type: "requestdecision",
-    //   userId: userId,
-    //   to: [req.user.email],
-    //   textContent: ` A decision for your join request on ${group.groupName} has been made`,
-    //   groupName: group.groupName,
-    //   content: ` A decision for your join request on ${group.groupName} has been made`,
-    // });
+        // Send notification to the user
+        // await NotificationService.sendNotification({
+        //   type: "requestdecision",
+        //   userId: userId,
+        //   to: [req.user.email],
+        //   textContent: ` A decision for your join request on ${group.groupName} has been made`,
+        //   groupName: group.groupName,
+        //   content: ` A decision for your join request on ${group.groupName} has been made`,
+        // });
         if (memberRequest?.user?.deviceToken) {
           await inAppNotificationService.sendNotification({
             medium: "token",
@@ -433,7 +478,15 @@ exports.handleJoinRequest = async (req, res) => {
 
 exports.getGroupDetails = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     const userId = req.user._id;
 
     // Find the group and populate the necessary fields
@@ -519,7 +572,7 @@ exports.getGroupsList = async (req, res) => {
     const sortedGroups = groupsWithDetails.sort((a, b) => {
       return new Date(b.latestMessageTime) - new Date(a.latestMessageTime);
     });
-    
+
     return BuildHttpResponse(res, 200, "Groups fetched successfully", {
       groups: sortedGroups,
       pagination: groups.pagination,
@@ -561,7 +614,15 @@ exports.getGroupDetailsByCode = async (req, res) => {
 
 exports.getJoinRequests = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     const group = await GroupModel.findById(groupId).populate(
       "joinRequests.user",
       "username avatarUrl"
@@ -601,7 +662,15 @@ exports.getJoinRequests = async (req, res) => {
 
 exports.leaveGroup = async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { groupId: groupIdStr } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
 
     // Fetch the group and populate admin and members fields
     const group = await GroupModel.findById(groupId)
@@ -665,7 +734,15 @@ exports.leaveGroup = async (req, res) => {
 exports.UpdateConfirmStatus = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { groupId, action } = req.params;
+    const { groupId: groupIdStr, action } = req.params;
+    let groupId = new ObjectId();
+    try {
+      groupId = mongoose.Types.ObjectId.createFromHexString(
+        groupIdStr.toString()
+      );
+    } catch (err) {
+      return BuildHttpResponse(res, 404, `Group not found`);
+    }
     if (!["confirm", "unconfirm"].includes(action)) {
       return BuildHttpResponse(res, 404, "page not found");
     }

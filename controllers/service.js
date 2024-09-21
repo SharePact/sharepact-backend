@@ -3,6 +3,7 @@ const Category = require("../models/category");
 const uploadFileToStorage = require("../utils/uploadfiletostorage");
 const { v4: uuidv4 } = require("uuid");
 const { BuildHttpResponse } = require("../utils/response");
+const mongoose = require("mongoose");
 
 exports.createService = async (req, res) => {
   try {

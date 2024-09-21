@@ -2,11 +2,12 @@ const GroupModel = require("../models/group");
 const Message = require("../models/message");
 const { BuildHttpResponse } = require("../utils/response");
 const { ObjectId } = require("mongodb");
+const mongoose = require("mongoose");
 
 exports.getMessagesByGroup = async (req, res) => {
   let groupId = new ObjectId();
   try {
-    groupId = new ObjectId(req.params.groupId);
+    groupId = mongoose.Types.ObjectId.createFromHexString(req.params.groupId);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Group not found");
   }
@@ -38,7 +39,7 @@ exports.getMessagesByGroup = async (req, res) => {
 exports.getUnreadMessagesCount = async (req, res) => {
   let groupId = new ObjectId();
   try {
-    groupId = new ObjectId(req.params.groupId);
+    groupId = mongoose.Types.ObjectId.createFromHexString(req.params.groupId);
   } catch (err) {
     return BuildHttpResponse(res, 404, "Group not found");
   }
@@ -63,7 +64,17 @@ exports.getUnreadMessagesCount = async (req, res) => {
 
 exports.markMessagesAsRead = async (req, res) => {
   try {
-    const { groupId, messageIds } = req.body;
+    let { groupId, messageIds } = req.body;
+    if (groupId) {
+      try {
+        groupId = mongoose.Types.ObjectId.createFromHexString(
+          groupId.toString()
+        );
+      } catch (err) {
+        return BuildHttpResponse(res, 404, `Group not found 1`, err);
+      }
+    }
+
     const userId = req.user._id;
 
     if (groupId) {
