@@ -2,6 +2,14 @@ FROM node:lts-alpine3.20
 WORKDIR /app
 RUN apk update && apk add bash
 
+RUN apk update && apk add bash fontconfig freetype ttf-dejavu libstdc++ curl
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 COPY package*.json ./
 RUN npm install
