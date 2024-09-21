@@ -13,6 +13,7 @@ COPY package*.json ./
 
 # Install project dependencies
 RUN npm install
+RUN npm install -g phantomjs-prebuilt
 
 # Copy the rest of the application
 COPY . .
