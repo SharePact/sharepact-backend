@@ -24,11 +24,11 @@ exports.recurringInvoices = async (req, res) => {
       groups,
       async (group) => {
         group.activated = true;
+        await PaymentInvoiceService.sendToGroup({ group });
         group.nextSubscriptionDate = new Date(
           new Date(group.nextSubscriptionDate).getTime() +
             30 * 24 * 60 * 60 * 1000
         );
-        await PaymentInvoiceService.sendToGroup({ group });
         await group.save();
       },
       { concurrency: 100 }
