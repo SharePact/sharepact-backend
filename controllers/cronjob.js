@@ -97,6 +97,7 @@ exports.checkMembersPayments = async (req, res) => {
 exports.paymentReminderForInactiveMembers = async (req, res) => {
   try {
     const groups = await GroupModel.findGroupsWithInvoiceSentExactly24HrsAgo();
+    console.log("groups found", groups?.length);
     await pMap(
       groups,
       async (group) => {
