@@ -5,7 +5,6 @@ const { sendEmailWithBrevo } = require("./brevo");
 const ejs = require("ejs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
-const puppeteer = require("puppeteer");
 const pdf = require("html-pdf");
 const processQueueManager = require("../processQueue");
 const GroupModel = require("../models/group");
