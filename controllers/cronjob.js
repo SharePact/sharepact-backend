@@ -103,6 +103,7 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
       async (group) => {
         const inactiveMembers =
           await group.findMembersWithPendingPaymentAfter24hrs();
+
         for (const inactiveMember of inactiveMembers) {
           await NotificationService.sendNotification({
             type: "paymentReminder",
