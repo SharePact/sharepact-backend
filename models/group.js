@@ -420,11 +420,11 @@ const GroupSchema = new Schema(
       async findGroupsWithInvoiceSentExactly24HrsAgo() {
         const now = new Date();
         const lowerBound = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000 - 1 * 60 * 1000
-        ); // 24 hours ago - 1 minutes
+          now.getTime() - 24 * 60 * 60 * 1000 - 1 * 60 * 1000 * 60 * 12
+        ); // 24 hours ago - 12 hrs
         const upperBound = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000 + 1 * 60 * 1000
-        ); // 24 hours ago + 1 minutes
+          now.getTime() - 24 * 60 * 60 * 1000 + 1 * 60 * 1000 * 60 * 12
+        ); // 24 hours ago + 12 hrs
 
         return await this.find({
           members: {
@@ -441,10 +441,7 @@ const GroupSchema = new Schema(
           })
           .populate("admin", "username email deviceToken");
       },
-      async findGroupsWithInactiveMembers(
-        deadlineInHrs = paymentDeadline,
-        limit = 1000
-      ) {
+      async findGroupsWithInactiveMembers(deadlineInHrs = paymentDeadline) {
         const now = new Date();
         const deadline = new Date(
           now.getTime() - deadlineInHrs * 60 * 60 * 1000
@@ -459,7 +456,6 @@ const GroupSchema = new Schema(
             },
           },
         })
-          .limit(limit)
           .populate({
             path: "members.user",
             select: "username email deviceToken",
@@ -485,7 +481,7 @@ const GroupSchema = new Schema(
           }
         );
       },
-      async findGroupsWithUpcomingSubscriptionDates(limit = 1000) {
+      async findGroupsWithUpcomingSubscriptionDates() {
         const now = new Date();
         const upcomingDate = new Date(
           now.getTime() + upcomingDeadline * 60 * 60 * 1000
@@ -494,14 +490,13 @@ const GroupSchema = new Schema(
         return await this.find({
           nextSubscriptionDate: { $lte: upcomingDate },
         })
-          .limit(limit)
           .populate("admin", "username email")
           .populate({
             path: "members.user",
             select: "username email",
           });
       },
-      async findActivatedGroupsWithValidMembersAndPayments(limit = 400) {
+      async findActivatedGroupsWithValidMembersAndPayments() {
         return await this.aggregate([
           // Match groups where activated is true
           {
@@ -570,9 +565,6 @@ const GroupSchema = new Schema(
               payments: 1,
               admin: 1,
             },
-          },
-          {
-            $limit: limit,
           },
         ]);
       },

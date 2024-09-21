@@ -68,22 +68,29 @@ class PaymentInvoiceService {
     });
 
     // Launch the Puppeteer browser
+    console.log("starting puppeteer");
     const browser = await puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Docker or root
       headless: true, // Make sure Puppeteer runs headless for better performance
       timeout: 60000, // Optional: increase launch timeout
     });
+    console.log("started puppeteer");
     const page = await browser.newPage();
+    console.log("started page");
 
     // Set the content for the page
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: "networkidle0", timeout: 60000 });
+    console.log("started page setcontent");
 
     // Generate the PDF
-    const pdfBuffer = await page.pdf({ format: "Letter" });
+    const pdfBuffer = await page.pdf({ format: "Letter", timeout: 60000 });
+    console.log("started pdf buffer");
     // Close the browser after generating the PDF
     await browser.close();
+    console.log("started browser close");
 
     const dataBuffer = Buffer.from(pdfBuffer);
+    console.log("started dataBuffer");
     return dataBuffer;
   }
 

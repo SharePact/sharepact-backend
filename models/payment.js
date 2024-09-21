@@ -54,7 +54,7 @@ const PaymentSchema = new Schema(
           { new: true }
         );
       },
-      async getPaymentsGroupedByDisbursementId(limit = 100) {
+      async getPaymentsGroupedByDisbursementId() {
         return await this.aggregate([
           {
             $match: {
@@ -67,9 +67,6 @@ const PaymentSchema = new Schema(
               _id: "$disbursementId",
               payments: { $push: "$$ROOT" },
             },
-          },
-          {
-            $limit: limit,
           },
         ]);
       },
