@@ -70,9 +70,16 @@ class PaymentInvoiceService {
     // Launch the Puppeteer browser
     console.log("starting puppeteer");
     const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Docker or root
+      // args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Docker or root
       headless: true, // Make sure Puppeteer runs headless for better performance
       timeout: 60000, // Optional: increase launch timeout
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--headless",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+      ],
     });
     console.log("started puppeteer");
     const page = await browser.newPage();
