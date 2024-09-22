@@ -216,9 +216,10 @@ describe("Cronjob API Endpoints", () => {
   });
 
   describe("GET /inactive-members-reminder", () => {
-    const oneMinuteInMs = 60 * 1000;
+    // const oneMinuteInMs = 60 * 1000;
+    const twelveHrsInMs = 60 * 60 * 1000 * 12;
     const randomOffset =
-      Math.floor(Math.random() * 2 * oneMinuteInMs) - oneMinuteInMs; // Random offset between -1 minute and +1 minute
+      Math.floor(Math.random() * 2 * twelveHrsInMs) - twelveHrsInMs; // Random offset between -1 minute and +1 minute
     it("should send payment reminders to inactive members and group creators", async () => {
       // Create an inactive member
       const inactiveMember = await createUserWithEmailAndPassword(

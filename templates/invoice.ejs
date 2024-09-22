@@ -111,7 +111,10 @@
                                     <strong>Date:</strong>
                                     <%= new Date().toLocaleDateString() %><br>
                                         <strong>Due Date:</strong>
-                                        <%= new Date(group.nextSubscriptionDate).toLocaleDateString() %>
+                                        <%= new Date(
+          new Date(group.nextSubscriptionDate).getTime() +
+            2 * 24 * 60 * 60 * 1000
+        ).toLocaleDateString() %>
                             </td>
                         </tr>
                     </table>

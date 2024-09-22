@@ -250,10 +250,10 @@ const GroupSchema = new Schema(
       async findMembersWithPendingPaymentAfter24hrs() {
         const now = new Date();
         const lowerBound = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000 - 1 * 60 * 1000
+          now.getTime() - 24 * 60 * 60 * 1000 - 1 * 60 * 1000 * 60 * 12
         ); // 24 hours ago - 1 minutes
         const upperBound = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000 + 1 * 60 * 1000
+          now.getTime() - 24 * 60 * 60 * 1000 + 1 * 60 * 1000 * 60 * 12
         ); // 24 hours ago + 1 minutes
 
         const pendingmembers = this.members.filter(

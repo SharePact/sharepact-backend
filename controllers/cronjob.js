@@ -8,8 +8,7 @@ const PaymentModel = require("../models/payment");
 const { v4: uuidv4 } = require("uuid");
 const inAppNotificationService = require("../notification/inapp");
 const mongoose = require("mongoose");
-// const pMap = require("p-map");
-// import pMap from "p-map";
+
 let pMap;
 (async () => {
   pMap = (await import("p-map")).default;
@@ -24,11 +23,11 @@ exports.recurringInvoices = async (req, res) => {
       groups,
       async (group) => {
         group.activated = true;
+        await PaymentInvoiceService.sendToGroup({ group });
         group.nextSubscriptionDate = new Date(
           new Date(group.nextSubscriptionDate).getTime() +
             30 * 24 * 60 * 60 * 1000
         );
-        await PaymentInvoiceService.sendToGroup({ group });
         await group.save();
       },
       { concurrency: 100 }
@@ -99,11 +98,13 @@ exports.checkMembersPayments = async (req, res) => {
 exports.paymentReminderForInactiveMembers = async (req, res) => {
   try {
     const groups = await GroupModel.findGroupsWithInvoiceSentExactly24HrsAgo();
+    console.log("groups found", groups?.length);
     await pMap(
       groups,
       async (group) => {
         const inactiveMembers =
           await group.findMembersWithPendingPaymentAfter24hrs();
+
         for (const inactiveMember of inactiveMembers) {
           await NotificationService.sendNotification({
             type: "paymentReminder",
@@ -114,13 +115,13 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
             groupName: group.groupName,
           });
           if (inactiveMember?.user?.deviceToken) {
-            await inAppNotificationService.sendNotification({
-              medium: "token",
-              topicTokenOrGroupId: inactiveMember?.user?.deviceToken,
-              name: "paymentReminder",
-              userId: inactiveMember?.user?._id,
-              groupId: group._id,
-            });
+            // await inAppNotificationService.sendNotification({
+            //   medium: "token",
+            //   topicTokenOrGroupId: inactiveMember?.user?.deviceToken,
+            //   name: "paymentReminder",
+            //   userId: inactiveMember?.user?._id,
+            //   groupId: group._id,
+            // });
           }
           await NotificationService.sendNotification({
             type: "memberPaymentReminderForCreator",
@@ -132,14 +133,14 @@ exports.paymentReminderForInactiveMembers = async (req, res) => {
             memberUsername: inactiveMember.username,
           });
           if (group?.admin?.deviceToken) {
-            await inAppNotificationService.sendNotification({
-              medium: "token",
-              topicTokenOrGroupId: group?.admin?.deviceToken,
-              name: "memberPaymentReminderForCreator",
-              userId: group.admin._id,
-              groupId: group._id,
-              memberId: inactiveMember?.user?._id,
-            });
+            // await inAppNotificationService.sendNotification({
+            //   medium: "token",
+            //   topicTokenOrGroupId: group?.admin?.deviceToken,
+            //   name: "memberPaymentReminderForCreator",
+            //   userId: group.admin._id,
+            //   groupId: group._id,
+            //   memberId: inactiveMember?.user?._id,
+            // });
           }
         }
       },
