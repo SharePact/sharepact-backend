@@ -5,7 +5,7 @@ const { sendEmailWithBrevo } = require("./brevo");
 const ejs = require("ejs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
-const puppeteer = require("puppeteer");
+const pdf = require("html-pdf");
 const processQueueManager = require("../processQueue");
 const GroupModel = require("../models/group");
 require("dotenv").config();
@@ -66,24 +66,24 @@ class PaymentInvoiceService {
       amount,
       payment_link: resp.payment_link,
     });
+    console.log("starting html-pdf");
 
-    // Launch the Puppeteer browser
-    const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for Docker or root
-      headless: true, // Make sure Puppeteer runs headless for better performance
-      timeout: 60000, // Optional: increase launch timeout
+    // Create PDF with html-pdf
+    const options = { format: "Letter" }; // You can modify options if needed
+
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      pdf.create(html, options).toBuffer((err, buffer) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(buffer);
+      });
     });
-    const page = await browser.newPage();
 
-    // Set the content for the page
-    await page.setContent(html, { waitUntil: "networkidle0" });
-
-    // Generate the PDF
-    const pdfBuffer = await page.pdf({ format: "Letter" });
-    // Close the browser after generating the PDF
-    await browser.close();
+    console.log("PDF generated successfully");
 
     const dataBuffer = Buffer.from(pdfBuffer);
+    console.log("PDF Buffer created");
     return dataBuffer;
   }
 

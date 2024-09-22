@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,59 +18,73 @@
             color: #555;
             background-color: #fff;
         }
+
         .invoice-box table {
             width: 100%;
             line-height: inherit;
             text-align: left;
         }
+
         .invoice-box table td {
             padding: 5px;
             vertical-align: top;
         }
+
         .invoice-box table tr td:nth-child(2) {
             text-align: right;
         }
+
         .invoice-box table tr.top table td {
             padding-bottom: 20px;
         }
+
         .invoice-box table tr.top table td.title {
             font-size: 45px;
             line-height: 45px;
             color: #333;
         }
+
         .invoice-box table tr.information table td {
             padding-bottom: 40px;
         }
+
         .invoice-box table tr.heading td {
             background: #eee;
             border-bottom: 1px solid #ddd;
             font-weight: bold;
         }
+
         .invoice-box table tr.details td {
             padding-bottom: 20px;
         }
+
         .invoice-box table tr.item td {
             border-bottom: 1px solid #eee;
         }
+
         .invoice-box table tr.item.last td {
             border-bottom: none;
         }
+
         .invoice-box table tr.total td:nth-child(2) {
             border-top: 2px solid #eee;
             font-weight: bold;
         }
+
         @media only screen and (max-width: 600px) {
             .invoice-box table tr.top table td {
                 width: 100%;
                 display: block;
                 text-align: center;
             }
+
             .invoice-box table tr.information table td {
                 width: 100%;
                 display: block;
                 text-align: center;
             }
         }
+
         .thank-you {
             text-align: center;
             margin-top: 30px;
@@ -78,20 +93,25 @@
         }
     </style>
 </head>
+
 <body>
     <div class="invoice-box">
         <table cellpadding="0" cellspacing="0">
             <tr class="top">
-                <td colspan="2">
-                    <table>
+                <td colspan="5">
+                    <table style="width: 100%;">
                         <tr>
                             <td class="title">
-                                <img src="https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725966804/ShapePact_Logo_eltxdv.png" style="width: 100%; max-width: 150px" alt="Logo">
+                                <img src="https://res.cloudinary.com/dvwmkgnzz/image/upload/v1725966804/ShapePact_Logo_eltxdv.png"
+                                    style="width: 100%; max-width: 150px" alt="Logo">
                             </td>
                             <td>
-                                <strong>Invoice No.:</strong> <%= group.groupCode %><br>
-                                <strong>Date:</strong> <%= new Date().toLocaleDateString() %><br>
-                                <strong>Due Date:</strong> <%= new Date(group.nextSubscriptionDate).toLocaleDateString() %>
+                                <strong>Invoice No.:</strong>
+                                <%= group.groupCode %><br>
+                                    <strong>Date:</strong>
+                                    <%= new Date().toLocaleDateString() %><br>
+                                        <strong>Due Date:</strong>
+                                        <%= new Date(group.nextSubscriptionDate).toLocaleDateString() %>
                             </td>
                         </tr>
                     </table>
@@ -99,18 +119,18 @@
             </tr>
 
             <tr class="information">
-                <td colspan="2">
+                <td colspan="5">
                     <table>
                         <tr>
                             <td>
                                 <strong>BILLED TO:</strong><br>
                                 <%= user.username %><br>
-                                <%= user.email %>
+                                    <%= user.email %>
                             </td>
                             <td>
                                 <strong>Company:</strong><br>
                                 Sharepact<br>
-                              Lagos, Nigeria
+                                Lagos, Nigeria
                             </td>
                         </tr>
                     </table>
@@ -127,19 +147,29 @@
             <tr class="item">
                 <td>Subscription Cost</td>
                 <td>1</td>
-                <td><%= cost %></td>
-                <td><%= cost %></td>
+                <td>
+                    <%= cost %>
+                </td>
+                <td>
+                    <%= cost %>
+                </td>
             </tr>
             <tr class="item">
                 <td>Handling Fee</td>
                 <td>1</td>
-                <td><%= group.handlingFee %></td>
-                <td><%= group.handlingFee %></td>
+                <td>
+                    <%= group.handlingFee %>
+                </td>
+                <td>
+                    <%= group.handlingFee %>
+                </td>
             </tr>
             <!-- Add additional items here if needed -->
             <tr class="total">
                 <td colspan="3">Total</td>
-                <td><%= amount %></td>
+                <td>
+                    <%= amount %>
+                </td>
             </tr>
         </table>
 
@@ -147,8 +177,11 @@
             Thank you!
         </div>
 
-        <div class="payment-info">
-            <p><strong>Payment Link:</strong> <a href="<%= payment_link %>"><%= payment_link %></a></p>
+        <div class="payment-info" style="text-align:center;padding:30px 25px;">
+            <a href="<%= payment_link %>"
+                style="background:#2F67F6;color:#ffffff;padding:15px 25px;border-radius:3px;text-decoration:none;font-family:'Helvetica Neue',Arial,sans-serif;">
+                <strong>Payment Link</strong>
+            </a>
         </div>
 
         <!-- <div class="signature">
@@ -157,4 +190,5 @@
         </div> -->
     </div>
 </body>
+
 </html>

@@ -36,7 +36,8 @@ mongoose
 FirebaseService.initApp();
 
 if (cluster.isMaster) {
-  const numCPUs = os.cpus().length;
+  const numCPUs = os.availableParallelism();
+  console.log("number of cpus: ", numCPUs)
   console.log(`Master process ${process.pid} is running`);
 
   // Fork workers
