@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { writeOnlyPlugin } = require("../utils/mongoose-plugins");
 const { getPaginatedResults } = require("../utils/pagination");
 
-const modelName = "Service";
+const serviceModelName = "Service";
 const ServiceSchema = new mongoose.Schema(
   {
     serviceName: { type: String, required: true },
@@ -96,4 +96,10 @@ const ServiceSchema = new mongoose.Schema(
   }
 );
 ServiceSchema.plugin(writeOnlyPlugin, { writeOnlyFields: [] });
-module.exports = mongoose.model(modelName, ServiceSchema);
+// module.exports.serviceModelName = serviceModelName;
+// module.exports = mongoose.model(serviceModelName, ServiceSchema);
+
+module.exports = {
+  serviceModelName: serviceModelName,
+  ServiceModel: mongoose.model(serviceModelName, ServiceSchema)
+};

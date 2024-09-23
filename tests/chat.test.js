@@ -65,7 +65,7 @@ describe("Chat API Endpoints", () => {
     await User.deleteMany({});
     await Category.deleteMany({});
     await Group.deleteMany({});
-    await Service.deleteMany({});
+    await Service.ServiceModel.deleteMany({});
     await mongoose.disconnect();
   }, 100000);
 

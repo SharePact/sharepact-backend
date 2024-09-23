@@ -109,7 +109,7 @@ async function createService(
   currency = "USD",
   serviceDescription = "test service"
 ) {
-  const service = new Service({
+  const service = new Service.ServiceModel({
     serviceName: "Test Service",
     logoUrl: "https://example.com/service-logo.png",
     serviceDescription,

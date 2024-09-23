@@ -44,7 +44,7 @@ describe("Service API Endpoints", () => {
     app = server.getApp();
     await User.deleteMany({});
     await Category.deleteMany({});
-    await Service.deleteMany({});
+    await Service.ServiceModel.deleteMany({});
     await AuthToken.deleteMany({});
     user = await createAdminUserWithEmailAndPassword("test4@gmail.com");
     authToken = await createAuthToken(user);
@@ -53,7 +53,7 @@ describe("Service API Endpoints", () => {
   afterAll(async () => {
     await User.deleteMany({});
     await Category.deleteMany({});
-    await Service.deleteMany({});
+    await Service.ServiceModel.deleteMany({});
     await AuthToken.deleteMany({});
     await mongoose.disconnect();
   }, 100000);
@@ -64,7 +64,7 @@ describe("Service API Endpoints", () => {
 
   afterEach(async () => {
     await Category.deleteMany({});
-    await Service.deleteMany({});
+    await Service.ServiceModel.deleteMany({});
   }, 100000);
 
   describe("POST /services", () => {

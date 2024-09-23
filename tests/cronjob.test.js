@@ -109,7 +109,7 @@ describe("Cronjob API Endpoints", () => {
     await User.deleteMany({});
     await Category.deleteMany({});
     await Group.deleteMany({});
-    await Service.deleteMany({});
+    await Service.ServiceModel.deleteMany({});
     await BankDetails.deleteMany({});
     await PaymentModel.deleteMany({});
     await mongoose.disconnect();

@@ -1,3 +1,4 @@
+const helmet = require('helmet');
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -13,6 +14,7 @@ class Server {
   }
 
   initializeMiddleWares() {
+    this.app.use(helmet());
     this.app.use(express.json());
     this.app.use(cors());
     this.app.use(this.baseRouter.getRouter());

@@ -1,3 +1,5 @@
+const cluster = require('cluster');
+const os = require('os');
 const mongoose = require("mongoose");
 const Server = require("./middleware/index.js");
 const Router = require("./routes/index.js");
@@ -33,6 +35,22 @@ mongoose
 
 FirebaseService.initApp();
 
-const server = new Server(new Router());
+if (cluster.isMaster) {
+  const numCPUs = os.availableParallelism();
+  console.log("number of cpus: ", numCPUs)
+  console.log(`Master process ${process.pid} is running`);
 
-server.startListening();
+  // Fork workers
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Starting a new one...`);
+    cluster.fork();
+  });
+} else {
+  // This will be executed by the worker processes
+  const serverInstance = new Server(new Router());
+  serverInstance.startListening();
+}

@@ -45,6 +45,8 @@ exports.checkMembersPayments = async (req, res) => {
       groups,
       async (group) => {
         const inactiveMembers = await group.findInactiveMembers();
+        // check if there are no inactive members
+        if (inactiveMembers == null || inactiveMembers.length == 0 || !Array.isArray(inactiveMembers)) return;
         for (const inactiveMember of inactiveMembers) {
           await group.removeMember(inactiveMember.user._id);
           await NotificationService.sendNotification({
