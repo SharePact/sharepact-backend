@@ -67,7 +67,10 @@ class InAppNotificationService {
         const member = await group.findMemberById(memberId);
         console.log({ member });
         const memberUser = await UserModel.findById(member?.user?._id);
-        const newMemberUser = { ...memberUser, member };
+        const newMemberUser = {
+          ...memberUser.toObject(),
+          member: member.toObject(),
+        };
         obj = { ...obj, memberUser: newMemberUser };
         console.log({ newMemberUser });
       }
