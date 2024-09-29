@@ -16,6 +16,7 @@ class InAppNotificationService {
     userId,
     groupId = null,
     memberId = null,
+    requesterId = null,
     chatMessageId = null,
   }) {
     const processQueue = processQueueManager.getProcessQueue();
@@ -29,6 +30,7 @@ class InAppNotificationService {
       groupId,
       exemptUsers,
       memberId,
+      requesterId,
       chatMessageId,
       handler: this.handleNotificationProcess,
     };
