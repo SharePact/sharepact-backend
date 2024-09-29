@@ -47,6 +47,7 @@ class InAppNotificationService {
     const groupId = data.groupId;
     const memberId = data.memberId;
     const requesterId = data.requesterId;
+    console.log(`checking requester ${requesterId} and member ${memberId} ids`);
     const chatMessageId = data.chatMessageId;
     let obj = { name };
 
