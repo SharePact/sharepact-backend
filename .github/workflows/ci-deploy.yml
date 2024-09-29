@@ -84,3 +84,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:latest
             docker compose down sharepact-backend
             docker compose up -d sharepact-backend
+            docker image prune -f
