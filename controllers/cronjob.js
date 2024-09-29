@@ -203,9 +203,7 @@ exports.groupCreatorDisbursement = async (req, res) => {
         narration: `disbursement for subscription from group ${group.groupName}`,
       });
 
-      console.log(
-        `Initiating Transfer completed ${dResponse?.status}, ${dResponse?.message}`
-      );
+      console.log(`Initiating Transfer completed ${{ dResponse }}`);
       if (dResponse?.status == true) {
         console.log(`updating payments`);
         await pMap(
