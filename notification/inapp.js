@@ -61,7 +61,9 @@ class InAppNotificationService {
       if (memberId) {
         const member = await group.findMemberById(memberId);
         let memberUser = await UserModel.findById(member?.user?._id);
+        console.log({ memberUser });
         memberUser = { ...memberUser, member };
+        console.log({ memberUser });
         obj = { ...obj, memberUser };
       }
     }
@@ -144,6 +146,7 @@ class InAppNotificationService {
         };
         break;
       case "joinrequest":
+        console.log({ memberUser });
         notification = {
           subject: `${memberUser.username} requested to join ${group.groupName}`,
           body: `${memberUser.username} requested to join ${group.groupName}`,
