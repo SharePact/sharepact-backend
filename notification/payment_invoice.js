@@ -36,6 +36,7 @@ class PaymentInvoiceService {
     const templatePath = path.join(__dirname, "../templates/invoice.ejs");
     const cost = group.subscriptionCost / group.members?.length;
     const amount = group.handlingFee + cost;
+    const fee = group.handlingFee;
     const service = await ServiceModel.findById(group.service);
 
     const resp = await Flutterwave.getUrl({
@@ -56,6 +57,7 @@ class PaymentInvoiceService {
       userId: user._id,
       groupId: group._id,
       amount,
+      fee,
       disbursed: false,
       currency: service.currency,
     });

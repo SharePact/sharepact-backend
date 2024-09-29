@@ -189,7 +189,7 @@ exports.groupCreatorDisbursement = async (req, res) => {
 
       let totalAmout = 0;
       for (const payment of payments) {
-        totalAmout += payment.amount;
+        totalAmout += payment.amount - payment.fee;
       }
 
       console.log(`Initiating Transfer`);
@@ -246,7 +246,7 @@ exports.verifyPendingDisbursements = async (req, res) => {
         await pMap(
           payments,
           async (payment) => {
-            totalAmount += payment.amount;
+            totalAmount += payment.amount - payment.fee;
             await PaymentModel.findByIdAndUpdate(payment._id, {
               disbursed: "successful",
             });
