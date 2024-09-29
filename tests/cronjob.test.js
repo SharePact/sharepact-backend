@@ -16,19 +16,13 @@ const {
   createService,
   createMessage,
   createAuthToken,
-  createOTP,
   createCategory,
 } = require("./test-utils");
 const processQueueManager = require("../processQueue");
 const NotificationModel = require("../models/Notifications");
-const InAppNotificationService = require("../notification/inapp");
-const NotificationService = require("../notification/index");
-const FirebaseService = require("../notification/firebase");
 const BankDetails = require("../models/bankdetails");
 const PaymentModel = require("../models/payment");
 const Flutterwave = require("../utils/flutterwave");
-const { BuildHttpResponse } = require("../utils/response");
-const { getPaginatedResults } = require("../utils/pagination");
 
 jest.mock("../processQueue", () => ({
   getProcessQueue: jest.fn(),
@@ -38,10 +32,10 @@ jest.mock("../notification/brevo", () => ({
   sendEmailWithBrevo: jest.fn(),
 }));
 
-jest.mock("../notification/firebase", () => ({
-  sendNotification: jest.fn(),
-  sendNotificationToTopic: jest.fn(),
-}));
+// jest.mock("../notification/firebase", () => ({
+//   sendNotification: jest.fn(),
+//   sendNotificationToTopic: jest.fn(),
+// }));
 
 jest.mock("../utils/flutterwave", () => ({
   verify: jest.fn().mockResolvedValue({
