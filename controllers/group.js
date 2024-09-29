@@ -816,7 +816,7 @@ exports.UpdateConfirmStatus = async (req, res) => {
       });
     }
 
-    return BuildHttpResponse(res, 200, "Status has been Confirmed");
+    return BuildHttpResponse(res, 200, "Status has been Updated");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
