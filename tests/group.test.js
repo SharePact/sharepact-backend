@@ -236,7 +236,7 @@ describe("Group API Endpoints", () => {
         .set("Authorization", `Bearer ${authToken}`)
         .send({ newSubscriptionCost });
 
-      expect(res.body.message).toBe("Subscription cost updated successfully");
+      expect(res.body.message).toBe("Subscription Cost has been updated");
       expect(res.status).toBe(200);
       expect(res.body.data.subscriptionCost).toBe(newSubscriptionCost);
     });
@@ -436,7 +436,7 @@ describe("Group API Endpoints", () => {
         .send({ groupId, userId: adminUser._id, approve: true });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("User join request approved");
+      expect(res.body.message).toBe("The join request has been approved");
     });
 
     it("should successfully handle a join request (reject)", async () => {
@@ -454,7 +454,7 @@ describe("Group API Endpoints", () => {
         .send({ groupId, userId: adminUser._id, approve: false });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("User join request rejected");
+      expect(res.body.message).toBe("The join request has been rejected");
     });
 
     it("should return 404 if group not found", async () => {
@@ -659,7 +659,7 @@ describe("Group API Endpoints", () => {
         .set("Authorization", `Bearer ${adminAuthToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successfully updated status");
+      expect(res.body.message).toBe("Status has been Updated");
     });
 
     it("should successfully update confirm status (unconfirm)", async () => {
@@ -676,7 +676,7 @@ describe("Group API Endpoints", () => {
         .set("Authorization", `Bearer ${adminAuthToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successfully updated status");
+      expect(res.body.message).toBe("Status has been Updated");
     });
 
     it("should return 404 if group not found", async () => {
@@ -713,7 +713,7 @@ describe("Group API Endpoints", () => {
         .set("Authorization", `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("invoices sent");
+      expect(res.body.message).toBe("Invoices has been sent");
       expect(PaymentInvoiceService.sendToGroup).toHaveBeenCalled();
     });
 

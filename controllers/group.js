@@ -67,7 +67,7 @@ exports.activateGroup = async (req, res) => {
     await PaymentInvoiceService.sendToGroup({ group });
     await group.save();
 
-    return BuildHttpResponse(res, 200, "invoices sent");
+    return BuildHttpResponse(res, 200, "Invoices has been sent");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -207,7 +207,7 @@ exports.updateSubscriptionCost = async (req, res) => {
     return BuildHttpResponse(
       res,
       200,
-      "Subscription cost updated successfully",
+      "Subscription Cost has been updated",
       group
     );
   } catch (error) {
@@ -304,6 +304,11 @@ exports.requestToJoinGroup = async (req, res) => {
   try {
     const { groupCode, message } = req.body;
     const userId = req.user._id;
+
+      // Check if message is provided
+      if (!message) {
+        return BuildHttpResponse(res, 400, "A Message must be provided");
+      }
 
     // Find the group by its groupCode
     const group = await GroupModel.findOne({ groupCode }).populate(
@@ -487,7 +492,7 @@ exports.handleJoinRequest = async (req, res) => {
     return BuildHttpResponse(
       res,
       200,
-      `User join request ${approve ? "approved" : "rejected"}`
+      `The join request has been ${approve ? "approved" : "rejected"}`
     );
   } catch (error) {
     console.log({ error });
@@ -811,7 +816,7 @@ exports.UpdateConfirmStatus = async (req, res) => {
       });
     }
 
-    return BuildHttpResponse(res, 200, "successfully updated status");
+    return BuildHttpResponse(res, 200, "Status has been Updated");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

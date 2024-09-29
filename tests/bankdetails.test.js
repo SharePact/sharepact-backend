@@ -134,7 +134,7 @@ describe("Bank Details API Endpoints", () => {
         .send(bankDetailsData);
 
       expect(res.status).toBe(201);
-      expect(res.body.message).toBe("Bank details added successfully");
+      expect(res.body.message).toBe("Bank details has been added");
       expect(res.body.data).toBeDefined();
       expect(res.body.data.accountName).toBe(bankDetailsData.accountName);
       expect(res.body.data.bankName).toBe(bankDetailsData.bankName);

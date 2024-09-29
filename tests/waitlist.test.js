@@ -57,7 +57,7 @@ describe("Waitlist API Endpoints", () => {
         .send({ name, email });
 
       expect(res.status).toBe(201);
-      expect(res.body.message).toBe("Successfully joined the waitlist");
+      expect(res.body.message).toBe("You have joined the waitlist");
       expect(res.body.data.name).toBe(name);
       expect(res.body.data.email).toBe(email);
     });

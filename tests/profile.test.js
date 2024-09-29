@@ -113,7 +113,7 @@ describe("Profile API Endpoints", () => {
         .send({ avatarUrl: newAvatarUrl });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("Avatar updated successfully");
+      expect(res.body.message).toBe("Avatar has been updated");
       expect(res.body.data.avatarUrl).toBe(newAvatarUrl);
 
       const updatedUser = await User.findById(user._id);
@@ -266,7 +266,7 @@ describe("Profile API Endpoints", () => {
         .set("Authorization", `Bearer ${existingUserAuthToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successful deleted account");
+      expect(res.body.message).toBe("You have deleted your account");
 
       const deletedUser = await User.findById(existingUser._id);
       expect(deletedUser).toBeNull();
