@@ -126,7 +126,7 @@ describe("Auth API Endpoints", () => {
       expect(processQueueManager.getProcessQueue).toHaveBeenCalled();
       expect(processQueueManager.getProcessQueue().add).toHaveBeenCalled();
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("User signed in successfully");
+      expect(res.body.message).toBe("You have signed in");
       expect(res.body.data.user.email).toBe(user.email);
       expect(res.body.data.token).toBeDefined();
     });
@@ -180,7 +180,7 @@ describe("Auth API Endpoints", () => {
         .set("Authorization", `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successfully logged out");
+      expect(res.body.message).toBe("You have logged out");
     });
   }, 100000);
 
@@ -191,7 +191,7 @@ describe("Auth API Endpoints", () => {
         .set("Authorization", `Bearer ${authToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successfully logged out");
+      expect(res.body.message).toBe("You have logged out");
     });
   }, 100000);
 
@@ -216,7 +216,7 @@ describe("Auth API Endpoints", () => {
       expect(processQueueManager.getProcessQueue).toHaveBeenCalled();
       expect(processQueueManager.getProcessQueue().add).toHaveBeenCalled();
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successful sent otp");
+      expect(res.body.message).toBe("OTP has been sent");
     });
 
     it("should return 400 if email is not registered", async () => {
@@ -239,7 +239,7 @@ describe("Auth API Endpoints", () => {
       expect(processQueueManager.getProcessQueue).toHaveBeenCalled();
       expect(processQueueManager.getProcessQueue().add).toHaveBeenCalled();
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("password change successful");
+      expect(res.body.message).toBe("Password has been changed");
     });
 
     it("should return 400 if password is missing", async () => {
@@ -330,7 +330,7 @@ describe("Auth API Endpoints", () => {
       expect(processQueueManager.getProcessQueue).toHaveBeenCalled();
       expect(processQueueManager.getProcessQueue().add).toHaveBeenCalled();
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successfully sent code");
+      expect(res.body.message).toBe("OTP has been sent");
     });
 
     it("should return 400 if user not found", async () => {
@@ -350,7 +350,7 @@ describe("Auth API Endpoints", () => {
         .send({ email: user.email, code: otp.code });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("email verified");
+      expect(res.body.message).toBe("Email has been verified");
     });
 
     it("should return 400 if code is missing", async () => {

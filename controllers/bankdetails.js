@@ -31,7 +31,7 @@ exports.addBankDetails = async (req, res) => {
     return BuildHttpResponse(
       res,
       201,
-      "Bank details added successfully",
+      "Bank details has been added",
       bankDetails
     );
   } catch (error) {

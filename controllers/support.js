@@ -6,7 +6,7 @@ exports.contactSupport = async (req, res) => {
   try {
     await SupportTicketModel.createSupportTicket({ name, email, message });
 
-    return BuildHttpResponse(res, 200, "successful");
+    return BuildHttpResponse(res, 200, "You have contacted support");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

@@ -104,7 +104,7 @@ exports.signinWithEmail = async (req, res) => {
         type: "loginAlert",
         userId: user._id,
         to: [user.email],
-        textContent: "you logged in successfully",
+        textContent: "You logged in successfully",
         username: user.username
       });
 
@@ -118,7 +118,7 @@ exports.signinWithEmail = async (req, res) => {
       }
     }
 
-    return BuildHttpResponse(res, 200, "User signed in successfully", {
+    return BuildHttpResponse(res, 200, "You have signed in", {
       user: userWithoutSensitiveInfo,
       token,
     });
@@ -145,11 +145,11 @@ exports.logout = async (req, res) => {
   const authToken = req.authToken;
   try {
     const token = await AuthTokenModel.findToken(authToken);
-    if (!token) return BuildHttpResponse(res, 200, "successfully logged out");
+    if (!token) return BuildHttpResponse(res, 200, "You have logged out");
 
     await AuthTokenModel.deleteToken(authToken);
 
-    return BuildHttpResponse(res, 200, "successfully logged out");
+    return BuildHttpResponse(res, 200, "You have logged out");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -172,7 +172,7 @@ exports.logoutAllSessions = async (req, res) => {
   try {
     await AuthTokenModel.deleteAllTokensByUser(userId);
 
-    return BuildHttpResponse(res, 200, "successfully logged out");
+    return BuildHttpResponse(res, 200, "You have logged out");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -195,7 +195,7 @@ exports.PasswordReset = async (req, res) => {
       code: otp.code,
     });
 
-    return BuildHttpResponse(res, 200, "successful sent otp");
+    return BuildHttpResponse(res, 200, "OTP has been sent");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -231,7 +231,7 @@ exports.ChangePassword = async (req, res) => {
         type: "passwordChangeAlert",
         userId: user._id,
         to: [user.email],
-        textContent: "Password change successful",
+        textContent: "Password has been changed",
       });
 
       if (user?.deviceToken) {
@@ -244,7 +244,7 @@ exports.ChangePassword = async (req, res) => {
       }
     }
 
-    return BuildHttpResponse(res, 200, "password change successful");
+    return BuildHttpResponse(res, 200, "Password has been changed");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -298,7 +298,7 @@ exports.ResendEmailVerificationOtp = async (req, res) => {
       code: otp.code,
     });
 
-    return BuildHttpResponse(res, 200, "successfully sent code");
+    return BuildHttpResponse(res, 200, "OTP has been sent");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }
@@ -343,7 +343,7 @@ exports.VerifyEmailVerificationOtp = async (req, res) => {
       username: user.username
     });
 
-    return BuildHttpResponse(res, 200, "email verified");
+    return BuildHttpResponse(res, 200, "Email has been verified");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

@@ -41,7 +41,7 @@ describe("Support Ticket API Endpoints", () => {
         .send({ name, email, message });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe("successful");
+      expect(res.body.message).toBe("You have contacted support");
       expect(res.body.data).toBeFalsy();
     }, 100000);
 
