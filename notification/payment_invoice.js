@@ -146,11 +146,9 @@ class PaymentInvoiceService {
       attachments: [{ name: "invoice.pdf", buffer }],
     });
 
-    // Update group details after sending invoice
-    await group.updateMemberPaymentActiveState(user._id, false);
-    await group.updateMemberlastInvoiceSentAt(user._id, Date.now());
-
+    console.log("trying to send inapp");
     if (user?.deviceToken) {
+      console.log("sending inapp");
       await inAppNotificationService.sendNotification({
         medium: "token",
         topicTokenOrGroupId: user?.deviceToken,
@@ -159,6 +157,11 @@ class PaymentInvoiceService {
         groupId: group._id,
       });
     }
+    console.log("trying to send inapp finished");
+
+    // Update group details after sending invoice
+    await group.updateMemberPaymentActiveState(user._id, false);
+    await group.updateMemberlastInvoiceSentAt(user._id, Date.now());
   }
 }
 
