@@ -66,15 +66,15 @@ class InAppNotificationService {
         console.log({ memberId });
         const member = await group.findMemberById(memberId);
         console.log({ member });
-        let memberUser = await UserModel.findById(member?.user?._id);
-        memberUser = { ...memberUser, member };
-        obj = { ...obj, memberUser };
+        const memberUser = await UserModel.findById(member?.user?._id);
+        const newMemberUser = { ...memberUser, member };
+        obj = { ...obj, memberUser: newMemberUser };
+        console.log({ newMemberUser });
       }
 
       if (requesterId) {
         console.log({ requesterId });
         let requester = await UserModel.findById(requesterId);
-        console.log({ requester });
         obj = { ...obj, requester };
       }
     }
@@ -164,7 +164,6 @@ class InAppNotificationService {
         };
         break;
       case "joinrequest":
-        console.log({ requester });
         notification = {
           subject: `${requester.username} requested to join ${group.groupName}`,
           body: `${requester.username} requested to join ${group.groupName}`,
@@ -205,6 +204,7 @@ class InAppNotificationService {
         };
         break;
       case "confirmedStatus":
+        console.log({ memberUser });
         notification = {
           subject: `your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
           body: `your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
