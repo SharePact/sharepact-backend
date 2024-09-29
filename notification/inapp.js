@@ -60,13 +60,16 @@ class InAppNotificationService {
       obj = { ...obj, group };
 
       if (memberId) {
+        console.log({ memberId });
         const member = await group.findMemberById(memberId);
+        console.log({ member });
         let memberUser = await UserModel.findById(member?.user?._id);
         memberUser = { ...memberUser, member };
         obj = { ...obj, memberUser };
       }
 
       if (requesterId) {
+        console.log({ requesterId });
         let requester = await UserModel.findById(requesterId);
         console.log({ requester });
         obj = { ...obj, requester };
