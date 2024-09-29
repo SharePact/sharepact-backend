@@ -8,6 +8,7 @@ const PaymentModel = require("../models/payment");
 const { v4: uuidv4 } = require("uuid");
 const inAppNotificationService = require("../notification/inapp");
 const mongoose = require("mongoose");
+const User = require("../models/user");
 
 let pMap;
 (async () => {
@@ -154,13 +155,34 @@ exports.groupCreatorDisbursement = async (req, res) => {
   try {
     const groups =
       await GroupModel.findActivatedGroupsWithValidMembersAndPayments();
+    console.log(`group for disbursement count ${groups.length}`);
 
     groups.map(async (group) => {
+      const admin = await User.findById(group.admin._id);
       const bankDetails = await BankDetails.getByUserId(group.admin._id);
       if (!bankDetails) {
-        console.log(`no bank details found`);
+        console.log(`disbursement failed because of missing bank details`);
+        await NotificationService.sendNotification({
+          type: "noBankDetails",
+          userId: admin._id,
+          to: [admin.email],
+          textContent: `Missing bank details for ${group.groupName}`,
+          username: admin.username,
+        });
+        if (admin?.deviceToken) {
+          await inAppNotificationService.sendNotification({
+            medium: "token",
+            topicTokenOrGroupId: admin?.deviceToken,
+            name: "missingBankDetails",
+            userId: admin._id,
+            groupId: group._id,
+            memberId: inactiveMember?.user?._id,
+          });
+        }
         return;
       }
+
+      console.log(`Bank details found`);
 
       const payments = group.payments;
       if (payments?.length <= 0) return;
@@ -170,6 +192,7 @@ exports.groupCreatorDisbursement = async (req, res) => {
         totalAmout += payment.amount;
       }
 
+      console.log(`Initiating Transfer`);
       const dResponse = await Flutterwave.initTransfer({
         groupCreatorId: group.admin._id,
         bankCode: bankDetails.sortCode,
@@ -180,7 +203,11 @@ exports.groupCreatorDisbursement = async (req, res) => {
         narration: `disbursement for subscription from group ${group.groupName}`,
       });
 
+      console.log(
+        `Initiating Transfer completed ${dResponse?.status}, ${dResponse?.message}`
+      );
       if (dResponse?.status == true) {
+        console.log(`updating payments`);
         await pMap(
           payments,
           async (payment) => {
@@ -205,20 +232,61 @@ exports.verifyPendingDisbursements = async (req, res) => {
     const disbursements =
       await PaymentModel.getPaymentsGroupedByDisbursementId();
 
+    console.log(`Pending Disbursements found ${disbursements.length}`);
+
     disbursements.map(async (disbursement) => {
       const disbursementId = disbursement._id;
+      console.log(`fetching Transfer`);
       const dResponse = await Flutterwave.fetchTransfer(disbursementId);
+      console.log(
+        `fetching Transfer completed ${dResponse?.status}, ${dResponse?.message}`
+      );
       const payments = disbursement?.payments;
+      let onePaymentId = null;
+      let totalAmount = 0;
       if (dResponse.status == true) {
         await pMap(
           payments,
           async (payment) => {
+            totalAmount += payment.amount;
             await PaymentModel.findByIdAndUpdate(payment._id, {
               disbursed: "successful",
             });
+
+            if (!onePaymentId && payment?._id) {
+              onePaymentId = payment._id;
+            }
           },
           { concurrency: 10 }
         );
+
+        if (onePaymentId) {
+          const onePayment = await PaymentModel.findById(onePaymentId);
+          const group = await GroupModel.findById(
+            onePayment?.group?._id
+          ).populate("admin", "username avatarUrl email deviceToken");
+          const admin = group.admin;
+          await NotificationService.sendNotification({
+            type: "disbursmentSuccessful",
+            userId: admin._id,
+            to: [admin.email],
+            textContent: `Disbursement Processed for ${group.groupName}`,
+            username: admin.username,
+            currency: onePayment.currency,
+            amount: totalAmount,
+            groupName: group.groupName,
+          });
+
+          if (admin?.deviceToken) {
+            await inAppNotificationService.sendNotification({
+              medium: "token",
+              topicTokenOrGroupId: admin?.deviceToken,
+              name: "disbursementSuccessful",
+              userId: admin._id,
+              groupId: group._id,
+            });
+          }
+        }
       } else if (
         dResponse?.statusString &&
         dResponse?.statusString.toLowerCase() == "failed"

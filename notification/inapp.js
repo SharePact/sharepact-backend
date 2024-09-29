@@ -60,7 +60,7 @@ class InAppNotificationService {
 
       if (memberId) {
         const member = await group.findMemberById(memberId);
-        const memberUser = await UserModel.findById(member.user._id);
+        const memberUser = await UserModel.findById(member?.user?._id);
         memberUser = { ...memberUser, member };
         obj = { ...obj, memberUser };
       }
@@ -147,6 +147,46 @@ class InAppNotificationService {
         notification = {
           subject: `${memberUser.username} requested to join ${group.groupName}`,
           body: `${memberUser.username} requested to join ${group.groupName}`,
+          data: {
+            type: "notification",
+            groupId: group._id,
+          },
+        };
+        break;
+      case "invoiceSent":
+        notification = {
+          subject: `Inovice for ${group.groupName} has been sent to your email, please check spam as well.`,
+          body: `Inovice for ${group.groupName} has been sent to your email, please check spam as well.`,
+          data: {
+            type: "notification",
+            groupId: group._id,
+          },
+        };
+        break;
+      case "missingBankDetails":
+        notification = {
+          subject: `Your account is missing Bank details for disbursement!`,
+          body: `Your account is missing Bank details for disbursement!`,
+          data: {
+            type: "notification",
+            groupId: group._id,
+          },
+        };
+        break;
+      case "disbursementSuccessful":
+        notification = {
+          subject: `Payment Disbursement for ${group.groupName} has been processed`,
+          body: `Payment Disbursement for ${group.groupName} has been processed`,
+          data: {
+            type: "notification",
+            groupId: group._id,
+          },
+        };
+        break;
+      case "confirmedStatus":
+        notification = {
+          subject: `your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
+          body: `your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
           data: {
             type: "notification",
             groupId: group._id,

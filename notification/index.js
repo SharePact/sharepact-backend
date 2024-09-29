@@ -33,7 +33,10 @@ class NotificationService {
       memberPaymentReminderForCreator: "memberPaymentReminderForCreator.ejs",
       groupcreation: "groupcreation.ejs",
       joinrequest: "joinrequest.ejs",
-      requestdecision: "requestdecision.ejs"
+      requestdecision: "requestdecision.ejs",
+      confirmedStatus: "confirmedStatus.ejs",
+      disbursmentSuccessful: "disbursmentSuccessful.ejs",
+      noBankDetails: "noBankDetails.ejs",
     };
 
     const templateFile = templates[type];
@@ -46,7 +49,11 @@ class NotificationService {
       templateFile,
       params
     );
-    const subject = this.getSubject(type);
+
+    let subject = this.getSubject(type);
+    if (params.subject) {
+      subject = params.subject;
+    }
 
     const emailData = {
       event: "notificationEvent",
@@ -87,7 +94,9 @@ class NotificationService {
       groupcreation: "Your Group has been created",
       joinrequest: "Someone wants to join your group",
       requestdecision: "Admin has either approved/rejected your request",
-
+      confirmedStatus: "Confirm Status updated",
+      disbursmentSuccessful: "Disbursement Successful",
+      noBankDetails: "Missing Bank Details",
     };
     return subjects[type] || "";
   }
