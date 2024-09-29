@@ -132,9 +132,10 @@ const GroupSchema = new Schema(
         return this;
       },
       async findMemberById(userId) {
-        return this.members.find(
+        const member = this.members.find(
           (member) => member.user.toString() === userId.toString()
         );
+        return member;
       },
       async isAdmin(userId) {
         return this.admin.toString() == userId.toString();

@@ -356,7 +356,7 @@ exports.requestToJoinGroup = async (req, res) => {
           name: "joinrequest",
           userId: req.user._id,
           groupId: group._id,
-          memberId: userId,
+          requesterId: userId,
         });
         console.log("In-app notification sent successfully.");
       } catch (error) {
@@ -789,10 +789,10 @@ exports.UpdateConfirmStatus = async (req, res) => {
       type: "confirmedStatus",
       userId: admin._id,
       to: [admin.email],
-      textContent: `Confirm Status updated by ${req.user.username} for ${group.groupName}`,
+      textContent: `Confirm Status updated by ${req.user.username} for ${updatedGroup.groupName}`,
       username: admin.username,
       memberName: req.user.username,
-      groupName: group.groupName,
+      groupName: updatedGroup.groupName,
       pendingCount,
       pendingMessage:
         pendingCount > 0
@@ -806,7 +806,7 @@ exports.UpdateConfirmStatus = async (req, res) => {
         topicTokenOrGroupId: admin?.deviceToken,
         name: "confirmedStatus",
         userId: admin._id,
-        groupId: group._id,
+        groupId: updatedGroup._id,
         memberId: req.user._id,
       });
     }
