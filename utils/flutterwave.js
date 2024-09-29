@@ -127,8 +127,8 @@ class Flutterwave {
       narration = `Transfer to Group Creator ${groupCreatorId}`;
 
     const payload = JSON.stringify({
-      accountBank: bankCode,
-      accountNumber,
+      account_bank: bankCode,
+      account_number: accountNumber,
       amount,
       currency,
       reference,
