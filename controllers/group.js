@@ -148,6 +148,7 @@ exports.createGroup = async (req, res) => {
       to: [req.user.email],
       textContent: `Your group "${newGroup.groupName}" has been successfully created.`,
       groupCode: newGroup.groupCode,
+      username: admin.username,
     });
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
