@@ -60,7 +60,7 @@ class InAppNotificationService {
 
       if (memberId) {
         const member = await group.findMemberById(memberId);
-        const memberUser = await UserModel.findById(member?.user?._id);
+        let memberUser = await UserModel.findById(member?.user?._id);
         memberUser = { ...memberUser, member };
         obj = { ...obj, memberUser };
       }
