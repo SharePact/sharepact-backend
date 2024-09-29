@@ -135,9 +135,11 @@ class Flutterwave {
       meta,
       narration,
     });
+    console.log("FL PAYLOAD", payload);
 
     try {
       const response = await axios.post(url, payload, { headers });
+      console.log("FL RESPONSE");
       if (response.data.status === "success") {
         return {
           status: true,
@@ -156,6 +158,7 @@ class Flutterwave {
         };
       }
     } catch (error) {
+      console.log({ error });
       return {
         status: false,
         message: error.message,
