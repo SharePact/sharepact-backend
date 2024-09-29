@@ -103,7 +103,10 @@ class PaymentInvoiceService {
 
   static async handleSendInvoiceProcess(data) {
     const { group: groupInfo, user } = data;
-    const group = await GroupModel.findById(groupInfo._id);
+    const group = await GroupModel.findById(groupInfo._id).populate(
+      "admin",
+      "username avatarUrl deviceToken"
+    );
     const buffer = await PaymentInvoiceService.generateInvoice(group, user);
 
     // Path to the EJS template
@@ -146,6 +149,16 @@ class PaymentInvoiceService {
     // Update group details after sending invoice
     await group.updateMemberPaymentActiveState(user._id, false);
     await group.updateMemberlastInvoiceSentAt(user._id, Date.now());
+
+    if (user?.deviceToken) {
+      await inAppNotificationService.sendNotification({
+        medium: "token",
+        topicTokenOrGroupId: user?.deviceToken,
+        name: "invoiceSent",
+        userId: user?._id,
+        groupId: group._id,
+      });
+    }
   }
 }
 

@@ -146,7 +146,7 @@ exports.createGroup = async (req, res) => {
       userId: admin,
       to: [req.user.email],
       textContent: `Your group "${newGroup.groupName}" has been successfully created.`,
-      groupCode: newGroup.groupCode
+      groupCode: newGroup.groupCode,
     });
 
     return BuildHttpResponse(res, 201, "successful", newGroup);
@@ -400,7 +400,7 @@ exports.handleJoinRequest = async (req, res) => {
 
     const group = await GroupModel.findById(groupId).populate(
       "joinRequests.user",
-      "username avatarUrl deviceToken"
+      "username avatarUrl deviceToken email"
     );
 
     if (!group) {
@@ -421,7 +421,10 @@ exports.handleJoinRequest = async (req, res) => {
       return BuildHttpResponse(res, 404, "Join request not found");
     }
 
-    if (approve && approve == true) {
+    let isApprove = false;
+    if (approve && approve == true) isApprove = true;
+
+    if (isApprove) {
       if (!(await group.isUserAMember(userId))) {
         await group.addMember({
           userId,
@@ -432,15 +435,7 @@ exports.handleJoinRequest = async (req, res) => {
         const chatRoom = await ChatRoomModel.findByGroupId(group._id);
         await chatRoom.addMember(userId);
 
-        // Send notification to the user
-        // await NotificationService.sendNotification({
-        //   type: "requestdecision",
-        //   userId: userId,
-        //   to: [req.user.email],
-        //   textContent: ` A decision for your join request on ${group.groupName} has been made`,
-        //   groupName: group.groupName,
-        //   content: ` A decision for your join request on ${group.groupName} has been made`,
-        // });
+        // Admin has either approved/rejected your request
         if (memberRequest?.user?.deviceToken) {
           await inAppNotificationService.sendNotification({
             medium: "token",
@@ -465,6 +460,23 @@ exports.handleJoinRequest = async (req, res) => {
 
     // Remove join request from the list whether it's approved or rejected
     await group.removeJoinRequestByIndex(joinRequestIndex);
+
+    // Send notification to the user
+    await NotificationService.sendNotification({
+      type: "requestdecision",
+      userId: memberRequest?.user?._id,
+      to: [memberRequest?.user?.email],
+      textContent: `Your request to join ${group.groupName} has been ${
+        isApprove ? "approved" : "rejected"
+      }`,
+      groupName: group.groupName,
+      textContent: `Your request to join ${group.groupName} has been ${
+        isApprove ? "approved" : "rejected"
+      }`,
+      subject: `${isApprove ? "Approved" : "Rejected"} join request to ${
+        group.groupName
+      }`,
+    });
 
     return BuildHttpResponse(
       res,
@@ -758,8 +770,38 @@ exports.UpdateConfirmStatus = async (req, res) => {
       await group.updateMemberConfirmStatus(group.admin, true);
     }
 
-    if (await group.haveAllMembersConfirmed()) {
-      // TODO: transfer money to admin
+    const updatedGroup = await GroupModel.findById(groupId);
+    let pendingCount = 0;
+
+    for (const member of updatedGroup?.members) {
+      if (!member.confirmStatus) pendingCount += 1;
+    }
+
+    const admin = await User.findById(group.admin._id);
+    await NotificationService.sendNotification({
+      type: "confirmedStatus",
+      userId: admin._id,
+      to: [admin.email],
+      textContent: `Confirm Status updated by ${req.user.username} for ${group.groupName}`,
+      username: admin.username,
+      memberName: req.user.username,
+      groupName: group.groupName,
+      pendingCount,
+      pendingMessage:
+        pendingCount > 0
+          ? "Reach out to members to confirm their statuses"
+          : "",
+    });
+
+    if (admin?.deviceToken) {
+      await inAppNotificationService.sendNotification({
+        medium: "token",
+        topicTokenOrGroupId: admin?.deviceToken,
+        name: "confirmedStatus",
+        userId: admin._id,
+        groupId: group._id,
+        memberId: req.user._id,
+      });
     }
 
     return BuildHttpResponse(res, 200, "successfully updated status");
