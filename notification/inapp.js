@@ -46,6 +46,7 @@ class InAppNotificationService {
     const userId = data.userId;
     const groupId = data.groupId;
     const memberId = data.memberId;
+    const requesterId = data.requesterId;
     const chatMessageId = data.chatMessageId;
     let obj = { name };
 
@@ -61,10 +62,14 @@ class InAppNotificationService {
       if (memberId) {
         const member = await group.findMemberById(memberId);
         let memberUser = await UserModel.findById(member?.user?._id);
-        console.log({ memberUser });
         memberUser = { ...memberUser, member };
-        console.log({ memberUser });
         obj = { ...obj, memberUser };
+      }
+
+      if (requesterId) {
+        let requester = await UserModel.findById(requesterId);
+        console.log({ requester });
+        obj = { ...obj, requester };
       }
     }
 
@@ -129,7 +134,14 @@ class InAppNotificationService {
   }
 
   // Function to construct the notification object
-  static async getNotification({ name, group, user, chatMessage, memberUser }) {
+  static async getNotification({
+    name,
+    group,
+    user,
+    chatMessage,
+    memberUser,
+    requester,
+  }) {
     let notification = { name, subject: name };
 
     switch (name) {
@@ -146,10 +158,10 @@ class InAppNotificationService {
         };
         break;
       case "joinrequest":
-        console.log({ memberUser });
+        console.log({ requester });
         notification = {
-          subject: `${memberUser.username} requested to join ${group.groupName}`,
-          body: `${memberUser.username} requested to join ${group.groupName}`,
+          subject: `${requester.username} requested to join ${group.groupName}`,
+          body: `${requester.username} requested to join ${group.groupName}`,
           data: {
             type: "notification",
             groupId: group._id,
