@@ -8,6 +8,7 @@ const { BuildHttpResponse } = require("../utils/response");
 const inAppNotificationService = require("../notification/inapp");
 const { ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
+const UserModel = require("../models/user");
 
 const generateGroupCode = async () => {
   let code;
@@ -473,9 +474,13 @@ exports.handleJoinRequest = async (req, res) => {
       textContent: `Your request to join ${group.groupName} has been ${
         isApprove ? "approved" : "rejected"
       }`,
+      content: `Your request to join ${group.groupName} has been ${
+        isApprove ? "approved" : "rejected"
+      }`,
       subject: `${isApprove ? "Approved" : "Rejected"} join request to ${
         group.groupName
       }`,
+      username: memberRequest?.user?.username,
     });
 
     return BuildHttpResponse(
@@ -484,6 +489,7 @@ exports.handleJoinRequest = async (req, res) => {
       `User join request ${approve ? "approved" : "rejected"}`
     );
   } catch (error) {
+    console.log({ error });
     return BuildHttpResponse(res, 500, error.message);
   }
 };
@@ -777,7 +783,7 @@ exports.UpdateConfirmStatus = async (req, res) => {
       if (!member.confirmStatus) pendingCount += 1;
     }
 
-    const admin = await User.findById(group.admin._id);
+    const admin = await UserModel.findById(group.admin._id);
     await NotificationService.sendNotification({
       type: "confirmedStatus",
       userId: admin._id,

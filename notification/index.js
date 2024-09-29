@@ -50,7 +50,7 @@ class NotificationService {
       params
     );
 
-    const subject = this.getSubject(type);
+    let subject = this.getSubject(type);
     if (params.subject) {
       subject = params.subject;
     }
