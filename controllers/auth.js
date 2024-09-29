@@ -172,7 +172,7 @@ exports.logoutAllSessions = async (req, res) => {
   try {
     await AuthTokenModel.deleteAllTokensByUser(userId);
 
-    return BuildHttpResponse(res, 200, "successfully logged out");
+    return BuildHttpResponse(res, 200, "You have logged out");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

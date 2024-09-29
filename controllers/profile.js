@@ -133,7 +133,7 @@ exports.changePassword = async (req, res) => {
         type: "passwordChangeAlert",
         userId: user._id,
         to: [user.email],
-        textContent: "Password change successful",
+        textContent: "Password has been changed",
       });
 
       if (user?.deviceToken) {
