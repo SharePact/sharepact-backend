@@ -83,4 +83,4 @@ jobs:
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/sharepact-backend:latest
             docker compose down sharepact-backend
-            docker compose up -d --force-recreate sharepact-backend
+            docker compose up -d sharepact-backend
