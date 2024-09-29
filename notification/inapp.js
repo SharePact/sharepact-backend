@@ -166,7 +166,7 @@ class InAppNotificationService {
         break;
       case "joinrequest":
         notification = {
-          subject: `${requester.username} requested to join ${group.groupName}`,
+          subject: "Join Request",
           body: `${requester.username} requested to join ${group.groupName}`,
           data: {
             type: "notification",
@@ -176,7 +176,7 @@ class InAppNotificationService {
         break;
       case "invoiceSent":
         notification = {
-          subject: `Inovice for ${group.groupName} has been sent to your email, please check spam as well.`,
+          subject: "Invoice Sent",
           body: `Inovice for ${group.groupName} has been sent to your email, please check spam as well.`,
           data: {
             type: "notification",
@@ -186,7 +186,7 @@ class InAppNotificationService {
         break;
       case "missingBankDetails":
         notification = {
-          subject: `Your account is missing Bank details for disbursement!`,
+          subject: `Missing Bank Details!`,
           body: `Your account is missing Bank details for disbursement!`,
           data: {
             type: "notification",
@@ -196,7 +196,7 @@ class InAppNotificationService {
         break;
       case "disbursementSuccessful":
         notification = {
-          subject: `Payment Disbursement for ${group.groupName} has been processed`,
+          subject: "Payment Disbursement",
           body: `Payment Disbursement for ${group.groupName} has been processed`,
           data: {
             type: "notification",
@@ -207,8 +207,8 @@ class InAppNotificationService {
       case "confirmedStatus":
         console.log({ memberUser });
         notification = {
-          subject: `your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
-          body: `your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
+          subject: "Confirmation Status",
+          body: `Your group member ${memberUser.username} for ${group.groupName} has confirmed their status`,
           data: {
             type: "notification",
             groupId: group._id,
@@ -217,41 +217,41 @@ class InAppNotificationService {
         break;
       case "joinRequestAccepted":
         notification = {
-          subject: `your request to join ${group.groupName} has been accepted`,
+          subject: "Request Accepted",
           type: "notification",
           group,
           user,
-          notificationMessage: `your request to join ${group.groupName} has been accepted`,
+          notificationMessage: `Your request to join ${group.groupName} has been accepted`,
         };
         break;
       case "joinRequestRejected":
         notification = {
-          subject: `your request to join ${group.groupName} has been rejected`,
+          subject: "Request Rejected",
           type: "notification",
           group,
           user,
-          notificationMessage: `your request to join ${group.groupName} has been rejected`,
+          notificationMessage: `Your request to join ${group.groupName} has been rejected`,
         };
         break;
       case "loginAlert":
         notification = {
-          subject: `Login notification`,
+          subject: `Login`,
           type: "notification",
           user,
-          notificationMessage: `you logged in successfully`,
+          notificationMessage: `You logged in successfully`,
         };
         break;
       case "passwordChangeAlert":
         notification = {
-          subject: `your password has been successfully updated`,
+          subject: `Password Changed`,
           type: "notification",
           user,
-          notificationMessage: `your password has been successfully updated`,
+          notificationMessage: `Your password has been successfully updated`,
         };
         break;
       case "removalFromSubscriptionGroup":
         notification = {
-          subject: `You have been removed from ${group.groupName}`,
+          subject: "Removal Notice",
           type: "notification",
           group,
           user,
@@ -260,7 +260,7 @@ class InAppNotificationService {
         break;
       case "memberRemovalUpdateForCreator":
         notification = {
-          subject: `Your member ${memberUser.username} has left/been removed from your group ${group.groupName}`,
+          subject: "Removal Notice",
           type: "notification",
           group,
           user,
@@ -270,7 +270,7 @@ class InAppNotificationService {
         break;
       case "paymentReminder":
         notification = {
-          subject: `Your subscription payment deadline is in 24hrs`,
+          subject: "Payment Reminder",
           type: "notification",
           group,
           user,
@@ -279,7 +279,7 @@ class InAppNotificationService {
         break;
       case "memberPaymentReminderForCreator":
         notification = {
-          subject: `Your member ${memberUser.username} from ${group.groupName} has their subscription payment deadline in 24hrs`,
+          subject: "Payment Reminder",
           type: "notification",
           group,
           user,

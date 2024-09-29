@@ -48,7 +48,7 @@ exports.updateAvatar = async (req, res) => {
       return BuildHttpResponse(res, 404, "User not found");
     }
 
-    return BuildHttpResponse(res, 200, "Avatar updated successfully", {
+    return BuildHttpResponse(res, 200, "Avatar has been updated", {
       avatarUrl: user.avatarUrl,
     });
   } catch (error) {
@@ -163,7 +163,7 @@ exports.deleteAccount = async (req, res) => {
 
     await user.deleteUserAndAssociatedData();
 
-    return BuildHttpResponse(res, 200, "successful deleted account");
+    return BuildHttpResponse(res, 200, "You have deleted your account");
   } catch (error) {
     return BuildHttpResponse(res, 500, error.message);
   }

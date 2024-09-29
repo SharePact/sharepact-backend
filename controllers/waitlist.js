@@ -25,7 +25,7 @@ exports.joinWaitlist = async (req, res) => {
     return BuildHttpResponse(
       res,
       201,
-      "Successfully joined the waitlist",
+      "You have joined the waitlist",
       waitlistEntry
     );
   } catch (err) {
