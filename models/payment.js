@@ -9,6 +9,7 @@ const PaymentSchema = new Schema(
     user: { type: mongoose.Types.ObjectId, required: true, ref: "User" },
     group: { type: mongoose.Types.ObjectId, required: true, ref: "Group" },
     amount: { type: Number, required: true },
+    fee: { type: Number, required: true, default: 0 },
     currency: { type: String, required: true },
     status: {
       type: String,
@@ -29,13 +30,21 @@ const PaymentSchema = new Schema(
       { fields: { user: 1, group: 1 } },
     ],
     statics: {
-      async createPayment({ reference, userId, groupId, amount, currency }) {
+      async createPayment({
+        reference,
+        userId,
+        groupId,
+        amount,
+        currency,
+        fee = 0,
+      }) {
         const payment = new this({
           reference,
           user: userId,
           group: groupId,
           amount,
           currency,
+          fee,
         });
         return await payment.save();
       },
