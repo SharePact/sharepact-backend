@@ -105,6 +105,7 @@ exports.signinWithEmail = async (req, res) => {
         userId: user._id,
         to: [user.email],
         textContent: "you logged in successfully",
+        username: user.username
       });
 
       if (user.deviceToken) {
@@ -331,6 +332,7 @@ exports.VerifyEmailVerificationOtp = async (req, res) => {
       userId: user._id,
       to: [user.email],
       textContent: "Email successfully verified",
+      username: user.username
     });
     // Trigger welcome email after successful verification
     await NotificationService.sendNotification({
@@ -338,6 +340,7 @@ exports.VerifyEmailVerificationOtp = async (req, res) => {
       userId: user._id,
       to: [user.email],
       textContent: "Welcome to Sharepact! We're glad to have you on board.",
+      username: user.username
     });
 
     return BuildHttpResponse(res, 200, "email verified");
